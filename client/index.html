@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SLI Mini-Project Screen" />
+
+    <title>SLI - Miniproject</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="shortcut icon" href="./components/favicon.png" type="image/x-icon" />
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        height: 100%;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh; /* Ensures the page takes full viewport height */
+      }
+
+      main {
+        flex-grow: 1; /* Expands the content to push footer to bottom */
+      }
+
+      footer {
+        margin-top: auto; /* Pushes footer to the bottom */
+        padding: 1rem 0;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <header class="bg-success text-white text-center py-3">
+      <div class="d-flex align-items-center justify-content-center">
+        <img src="./components/favicon.png" alt="SLI Logo" class="me-2" style="height: 50px" />
+        <h1 class="mb-0">SLI Mini-Project</h1>
+      </div>
+    </header>
+
+    <main class="container mt-4">
+      <div class="card shadow p-4">
+        <div class="row">
+          <div class="col-md-6 text-center">
+            <img src="./components/crane.jpg" alt="crane-image" class="img-fluid rounded" />
+          </div>
+          <div class="col-md-6" id="dynamic-data-container">
+            <!-- Dynamic content will be added here by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-dark text-white text-center py-3">
+      <p>&copy; 2025 SLI Mini-Project. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./components/script.js"></script>
+  </body>
+</html>
