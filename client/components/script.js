@@ -1,5 +1,5 @@
-// const fetchLink = "https://sli-field-project-backend.vercel.app/";
-const fetchLink = "http://localhost:3000/";
+const fetchLink = "https://sli-field-project-backend.vercel.app/";
+// const fetchLink = "http://localhost:3000/";
 
 async function fetchData() {
   try {
