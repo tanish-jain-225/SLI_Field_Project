@@ -8,7 +8,7 @@ app.use(cors());
 
 // Environment Variables
 require('dotenv').config();
-const PORT = process.env.PORT_NAME;
+const PORT = 3000;
 const url = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME; // Your MongoDB database name
 const collectionName = process.env.C_NAME; // The collection where data will be saved
