@@ -32,15 +32,15 @@
       body {
         display: flex;
         flex-direction: column;
-        min-height: 100vh; /* Ensures the page takes full viewport height */
+        min-height: 100vh;
       }
 
       main {
-        flex-grow: 1; /* Expands the content to push footer to bottom */
+        flex-grow: 1;
       }
 
       footer {
-        margin-top: auto; /* Pushes footer to the bottom */
+        margin-top: auto;
         padding: 1rem 0;
       }
     </style>
@@ -67,12 +67,18 @@
           <div class="col-md-6 text-center">
             <img
               src="./components/crane.jpg"
-              alt="crane-image"
+              alt="Crane Image"
               class="img-fluid rounded w-100"
             />
           </div>
-          <div class="col-md-6" id="dynamic-data-container">
-            <!-- Default data section  -->
+          <div class="col-md-6">
+            <!-- Data Cards -->
+            <div id="dynamic-data-container"></div>
+
+            <!-- Start/Stop Button -->
+            <div class="d-flex justify-content-center mt-3 w-100">
+              <button id="toggle-button" class="btn btn-success w-100">Start</button>
+            </div>
           </div>
         </div>
       </div>
