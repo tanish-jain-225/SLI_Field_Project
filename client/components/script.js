@@ -80,7 +80,7 @@ toggleButton.addEventListener("click", () => {
   } else {
     fetchData(); // Fetch immediately
     fetchInterval = setInterval(fetchData, 2000); // Fetch every 2 seconds
-    toggleButton.textContent = "Stop";
+    toggleButton.textContent = "Stop Reading";
     toggleButton.classList.replace("btn-success", "btn-danger");
     console.log("Fetching started...");
   }
