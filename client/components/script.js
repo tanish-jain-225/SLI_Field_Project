@@ -1,5 +1,5 @@
-const fetchLink = "https://sli-field-project-backend.vercel.app/";
-// const fetchLink = "http://localhost:3000/";
+// const fetchLink = "https://sli-field-project-backend.vercel.app/";
+const fetchLink = "http://localhost:3000/";
 
 let fetchInterval;
 const toggleButton = document.getElementById("toggle-button");

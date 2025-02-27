@@ -1,80 +1,138 @@
 // Imports
 const express = require('express');
 const { MongoClient } = require('mongodb');
-require('dotenv').config(); // Environment Variables - Secret
+require('dotenv').config(); // Load environment variables
 
-// Configurations
+// Configuration
 const app = express();
-const port = 5000; 
-const url = process.env.MONGO_URI; // Default MongoDB URI
-const dbName = process.env.DB_NAME; // Default database name
-const collectionName = process.env.C_NAME; // Default collection name
+const port = 5000;
+const url = process.env.MONGO_URI;
+const dbName = process.env.DB_NAME;
+const collectionName = process.env.C_NAME;
 
-// Middleware to parse JSON request bodies
 app.use(express.json());
 
-// Global MongoDB Client (Reused for efficiency)
+// Global MongoDB Client (reused for efficiency)
 let client;
 
-// Function to connect to MongoDB (Reusing client)
+// ======================== MongoDB Connection ========================
+
 const connectToMongoDB = async () => {
     if (!client) {
         client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-        await client.connect();
+        try {
+            await client.connect();
+            console.log('✅ Connected to MongoDB.');
+        } catch (err) {
+            console.error('❌ MongoDB Connection Failed:', err.message);
+            process.exit(1);
+        }
     }
     return client.db(dbName);
 };
 
-// Arduino Data to Variable (Simulated data generation)
-const ardiunoToVar = async () => {
-    const loadData = Math.random() * 10; // Random load value
-    const loadCost = Math.random() * 100; // Random cost value
-    const loadAngle = Math.random() * 360; // Random angle value
-    const loadLengthbar = Math.random() * 100; // Random length value
+// ======================== Data Handling Functions ========================
 
-    return { loadData, loadCost, loadAngle, loadLengthbar };
+/**
+ * Generate current "sensor data". Easily extendable to add new parameters.
+ */
+const generateSensorData = () => {
+    return {
+        load: Math.random() * 10,
+        cost: Math.random() * 100,
+        angle: Math.random() * 360,
+        lengthbar: Math.random() * 100,
+    };
 };
 
-// Function to generate random data and post to MongoDB
-const sendData = async () => {
+/**
+ * Posts sensor data to MongoDB, logs it, and deletes all older documents.
+ * Keeps only the latest inserted data.
+ * @param {Object} data - The data object to insert.
+ */
+const postData = async (data) => {
     try {
         const db = await connectToMongoDB();
         const collection = db.collection(collectionName);
 
-        // Arduino to variable
-        const { loadData, loadCost, loadAngle, loadLengthbar } = await ardiunoToVar();
+        data.timestamp = new Date().toISOString(); // Add timestamp
 
-        // Data to be saved
-        const data = {
-            load: loadData,
-            cost: loadCost,
-            angle: loadAngle,
-            lengthbar: loadLengthbar,
-            timestamp: new Date().toISOString(), // Include timestamp for when the data was recorded
-        };
-
-        // Insert the data into MongoDB
+        // Insert new data
         const result = await collection.insertOne(data);
-        console.log(`Data inserted with ID: ${result.insertedId}`);
+        console.log('📥 Data Inserted:', JSON.stringify(data, null, 2));
+
+        // Fetch and delete all previous documents
+        const oldDocs = await collection.find({ _id: { $ne: result.insertedId } }).toArray();
+
+        if (oldDocs.length > 0) {
+            console.log('🗑️ Deleting Previous Documents:');
+            oldDocs.forEach(doc => console.log(JSON.stringify(doc, null, 2)));
+            const deleteResult = await collection.deleteMany({ _id: { $ne: result.insertedId } });
+            console.log(`✅ Deleted ${deleteResult.deletedCount} old document(s).`);
+        } else {
+            console.log('✅ No previous documents to delete.');
+        }
+
     } catch (error) {
-        console.error('Error inserting data:', error.message);
+        console.error('❌ Error inserting data:', error.message);
     }
 };
 
-// Call the sendData function every 2 seconds
-setInterval(sendData, 2000);
+// ======================== Initialization & Periodic Data Posting ========================
 
-// Graceful Shutdown for MongoDB Connection
-process.on('SIGINT', async () => {
-    console.log('Shutting down server...');
+/**
+ * Posts initial zeroed data to the database.
+ */
+const postInitialZeroData = async () => {
+    const initialData = {
+        load: 0,
+        cost: 0,
+        angle: 0,
+        lengthbar: 0,
+    };
+    console.log('🔄 Posting initial zero data...');
+    await postData(initialData);
+};
+
+/**
+ * Posts new sensor data every 2 seconds.
+ */
+const startPeriodicDataPosting = async () => {
+    try {
+        await postInitialZeroData();
+        setInterval(async () => {
+            const newData = generateSensorData();
+            await postData(newData);
+        }, 2000);
+    } catch (error) {
+        console.error('❌ Failed to start periodic data posting:', error.message);
+        process.exit(1);
+    }
+};
+
+// ======================== Graceful Shutdown ========================
+
+const shutdown = async (reason) => {
+    console.log(`⚠️ Shutting down server: ${reason}`);
     if (client) {
         await client.close();
-        console.log('MongoDB connection closed.');
+        console.log('✅ MongoDB connection closed.');
     }
     process.exit(0);
+};
+
+process.on('SIGINT', () => shutdown('SIGINT (Ctrl+C)'));
+process.on('SIGTERM', () => shutdown('SIGTERM (Process Termination)'));
+
+// ======================== Health Check Endpoint (Optional) ========================
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'Server is running smoothly.' });
 });
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+// ======================== Start Server ========================
+
+app.listen(port, async () => {
+    console.log(`🚀 Server running at http://localhost:${port}`);
+    await startPeriodicDataPosting();
 });
