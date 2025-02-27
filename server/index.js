@@ -1,66 +1,50 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
 const cors = require("cors");
-require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MongoDB connection variables
+// Environment Variables
+require('dotenv').config();
+const PORT = 3000;
 const url = process.env.MONGO_URI;
-const dbName = process.env.DB_NAME;
-const collectionName = process.env.C_NAME;
+const dbName = process.env.DB_NAME; // Your MongoDB database name
+const collectionName = process.env.C_NAME; // The collection where data will be saved
+const client = new MongoClient(url);
 
-// Connection cache for performance (so we don't reconnect every request)
-let cachedClient = null;
-let cachedDb = null;
+let db;
 
-// Function to establish/reuse MongoDB connection
-async function connectToDatabase() {
-    if (cachedDb) {
-        // Use cached connection if available (for warm starts)
-        return { client: cachedClient, db: cachedDb };
-    }
-
-    const client = new MongoClient(url);
-
+async function initializeDatabase() {
     try {
         await client.connect();
-        console.log("✅ Connected to MongoDB");
-
-        const db = client.db(dbName);
-        cachedClient = client;
-        cachedDb = db;
-
-        return { client, db };
+        console.log("Connected to MongoDB!");
+        db = client.db(dbName);
     } catch (err) {
-        console.error("❌ MongoDB Connection Error:", err.message);
-        throw err;
+        console.error("Failed to connect to MongoDB:", err.message);
+        process.exit(1); // Exit the process if database connection fails
     }
 }
 
-// API Route Handler
 app.get("/", async (req, res) => {
+    if (!db) {
+        return res.status(500).json({ message: "Database not initialized yet" });
+    }
     try {
-        const { db } = await connectToDatabase();
         const items = await db.collection(collectionName).find().toArray();
         res.json(items);
     } catch (err) {
-        console.error("❌ Error Fetching Data:", err.message);
+        console.error("Error fetching data:", err.message);
         res.status(500).json({ message: "Internal server error" });
     }
 });
 
-// Health check endpoint (optional, useful for debugging on Vercel)
-app.get("/health", async (req, res) => {
-    try {
-        const { db } = await connectToDatabase();
-        res.json({ status: "ok", dbConnected: !!db });
-    } catch (err) {
-        res.status(500).json({ status: "error", message: err.message });
-    }
-});
-
-// Important: No app.listen(), Vercel automatically handles this
-module.exports = app;
+// Start the Server Only After Database is Initialized
+initializeDatabase()
+    .then(() => {
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch((err) => {
+        console.error("Error during server startup:", err.message);
+    });
