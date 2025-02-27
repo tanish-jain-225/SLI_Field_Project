@@ -42,6 +42,7 @@ const generateSensorData = () => {
         cost: Math.random() * 100,
         angle: Math.random() * 360,
         lengthbar: Math.random() * 100,
+        frequency: Math.random() * 1000,
     };
 };
 
@@ -68,7 +69,7 @@ const postData = async (data) => {
             console.log('🗑️ Deleting Previous Documents:');
             oldDocs.forEach(doc => console.log(JSON.stringify(doc, null, 2)));
             const deleteResult = await collection.deleteMany({ _id: { $ne: result.insertedId } });
-            console.log(`✅ Deleted ${deleteResult.deletedCount} old document(s).`);
+            // console.log(`✅ Deleted ${deleteResult.deletedCount} old document(s).`);
         } else {
             console.log('✅ No previous documents to delete.');
         }
@@ -81,25 +82,10 @@ const postData = async (data) => {
 // ======================== Initialization & Periodic Data Posting ========================
 
 /**
- * Posts initial zeroed data to the database.
- */
-const postInitialZeroData = async () => {
-    const initialData = {
-        load: 0,
-        cost: 0,
-        angle: 0,
-        lengthbar: 0,
-    };
-    console.log('🔄 Posting initial zero data...');
-    await postData(initialData);
-};
-
-/**
  * Posts new sensor data every 2 seconds.
  */
 const startPeriodicDataPosting = async () => {
     try {
-        await postInitialZeroData();
         setInterval(async () => {
             const newData = generateSensorData();
             await postData(newData);
