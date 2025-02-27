@@ -50,11 +50,6 @@ app.get("/", checkDatabaseReady, async (req, res) => {
     }
 });
 
-// Health Check Route (Renamed to /health2)
-app.get("/health2", (req, res) => {
-    res.json({ status: "UP", databaseConnected: !!db });
-});
-
 // Start Server After Successful Database Initialization
 initializeDatabase()
     .then(() => {
