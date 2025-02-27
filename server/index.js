@@ -1,47 +1,49 @@
-// Imports
 const express = require("express");
 const { MongoClient } = require("mongodb");
 const cors = require("cors");
 require('dotenv').config();
 
-// Configurations
 const app = express();
-const PORT = 3000; // Use env PORT if provided, fallback to 3000
+app.use(express.json());
+app.use(cors());
+
+// MongoDB connection variables
 const url = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME;
 const collectionName = process.env.C_NAME;
 
-// Middleware
-app.use(express.json());
-app.use(cors());
+// Connection cache for performance (so we don't reconnect every request)
+let cachedClient = null;
+let cachedDb = null;
 
-// Global MongoDB Client
-const client = new MongoClient(url);
-let db = null;
+// Function to establish/reuse MongoDB connection
+async function connectToDatabase() {
+    if (cachedDb) {
+        // Use cached connection if available (for warm starts)
+        return { client: cachedClient, db: cachedDb };
+    }
 
-// Initialize Database Connection
-async function initializeDatabase() {
+    const client = new MongoClient(url);
+
     try {
         await client.connect();
         console.log("✅ Connected to MongoDB");
-        db = client.db(dbName);
+
+        const db = client.db(dbName);
+        cachedClient = client;
+        cachedDb = db;
+
+        return { client, db };
     } catch (err) {
         console.error("❌ MongoDB Connection Error:", err.message);
-        process.exit(1); // Stop app if DB connection fails
+        throw err;
     }
 }
 
-// Middleware to ensure DB connection is ready
-function checkDatabaseReady(req, res, next) {
-    if (!db) {
-        return res.status(500).json({ message: "Database not initialized yet" });
-    }
-    next();
-}
-
-// Root Route - Fetch All Data
-app.get("/", checkDatabaseReady, async (req, res) => {
+// API Route Handler
+app.get("/", async (req, res) => {
     try {
+        const { db } = await connectToDatabase();
         const items = await db.collection(collectionName).find().toArray();
         res.json(items);
     } catch (err) {
@@ -50,21 +52,15 @@ app.get("/", checkDatabaseReady, async (req, res) => {
     }
 });
 
-// Start Server After Successful Database Initialization
-initializeDatabase()
-    .then(() => {
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error("❌ Error During Server Startup:", err.message);
-    });
-
-// Graceful Shutdown - Close MongoDB connection
-process.on('SIGINT', async () => {
-    console.log("🔻 Shutting down server...");
-    await client.close();
-    console.log("✅ MongoDB connection closed.");
-    process.exit(0);
+// Health check endpoint (optional, useful for debugging on Vercel)
+app.get("/health", async (req, res) => {
+    try {
+        const { db } = await connectToDatabase();
+        res.json({ status: "ok", dbConnected: !!db });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
+    }
 });
+
+// Important: No app.listen(), Vercel automatically handles this
+module.exports = app;
