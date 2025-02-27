@@ -1,6 +1,6 @@
 // Configurable Fetch URL
-// const fetchLink = "https://sli-field-project-backend.vercel.app/";
-const fetchLink = "http://localhost:3000/";
+const fetchLink = "https://sli-field-project-backend.vercel.app/";
+// const fetchLink = "http://localhost:3000/";
 
 // Fetch Interval Controller
 let fetchInterval;
