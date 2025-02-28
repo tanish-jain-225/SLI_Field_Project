@@ -50,42 +50,35 @@ const generateSensorData = () => {
 /**
  * Posts sensor data to MongoDB, logs it, and deletes all older documents.
  * Keeps only the latest inserted data.
+ * @param {Object} data - The data object to insert.
  */
 const postData = async (data) => {
-    const db = await connectToMongoDB();               // Ensure MongoDB connection is established
-    const collection = db.collection(collectionName);  // Access the specific collection
-
-    const session = client.startSession();             // Start a new session (required for transactions)
-
     try {
-        session.startTransaction();                     // Start a transaction to group operations atomically
+        const db = await connectToMongoDB();
+        const collection = db.collection(collectionName);
 
-        data.timestamp = new Date().toISOString();      // Add a timestamp field to the sensor data
+        data.timestamp = new Date().toISOString(); // Add timestamp
 
-        // Step 1: Insert the new sensor data document into the collection within the transaction
-        const result = await collection.insertOne(data, { session });
+        // Insert new data
+        const result = await collection.insertOne(data);
         console.log('Data Inserted:', JSON.stringify(data, null, 2));
 
-        // Step 2: Delete all older documents (documents other than the newly inserted one) within the transaction
-        const deleteResult = await collection.deleteMany(
-            { _id: { $ne: result.insertedId } },        // Filter: Delete all except the newly inserted document
-            { session }                                 // Ensure delete happens in the same transaction
-        );
+        // Fetch and delete all previous documents
+        const oldDocs = await collection.find({ _id: { $ne: result.insertedId } }).toArray();
 
-        console.log(`Deleted ${deleteResult.deletedCount} old document(s).`);
+        if (oldDocs.length > 0) {
+            console.log('Deleting Previous Documents:');
+            oldDocs.forEach(doc => console.log(JSON.stringify(doc, null, 2)));
+            const deleteResult = await collection.deleteMany({ _id: { $ne: result.insertedId } });
+            // console.log(`Deleted ${deleteResult.deletedCount} old document(s).`);
+        } else {
+            console.log('No previous documents to delete.');
+        }
 
-        // Step 3: Commit the transaction — both insert and delete will be finalized only if this succeeds
-        await session.commitTransaction();
     } catch (error) {
-        console.error('Error during atomic insert and delete:', error.message);
-
-        // If any error occurs, rollback (undo) all operations performed in the transaction
-        await session.abortTransaction();
-    } finally {
-        session.endSession();                           // End the session (free up resources)
+        console.error('Error inserting data:', error.message);
     }
 };
-
 
 // ======================== Initialization & Periodic Data Posting ========================
 
@@ -95,12 +88,8 @@ const postData = async (data) => {
 const startPeriodicDataPosting = async () => {
     try {
         setInterval(async () => {
-            try {
-                const newData = generateSensorData();
-                await postData(newData);
-            } catch (intervalError) {
-                console.error('Error during periodic data posting:', intervalError.message);
-            }
+            const newData = generateSensorData();
+            await postData(newData);
         }, 2000);
     } catch (error) {
         console.error('Failed to start periodic data posting:', error.message);
@@ -113,12 +102,8 @@ const startPeriodicDataPosting = async () => {
 const shutdown = async (reason) => {
     console.log(`Shutting down server: ${reason}`);
     if (client) {
-        try {
-            await client.close();
-            console.log('MongoDB connection closed.');
-        } catch (closeError) {
-            console.error('Error closing MongoDB connection:', closeError.message);
-        }
+        await client.close();
+        console.log('MongoDB connection closed.');
     }
     process.exit(0);
 };
