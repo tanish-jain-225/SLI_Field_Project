@@ -1,33 +1,34 @@
-// Configurable Fetch URL
-// const fetchLink = "http://localhost:3000/";
-const fetchLink = "https://sli-field-project-backend.vercel.app/";
+// Configurable Fetch URL - auto switch based on environment
+const fetchLink = window.location.hostname === "localhost"
+    ? "http://localhost:3000/"
+    : "https://sli-field-project-backend.vercel.app/";
 
 // Fetch Interval Controller
 let fetchInterval;
+const FETCH_INTERVAL_MS = 2000; // Fetch every 2 seconds
 
 // HTML Element References
 const toggleButton = document.getElementById("toggle-button");
 const container = document.querySelector("#dynamic-data-container");
+const lastUpdatedElement = document.getElementById("last-updated");
 
-// List of Data Fields - Add more fields easily here
-// Case Sensitive: key must match the key in the JSON data
-// Add more fields as needed with the same structure (key, title, unit) 
+// List of Data Fields - Add more fields here easily
 const dataFields = [
     { key: "load", title: "Load", unit: "kg" },
     { key: "cost", title: "Cost", unit: "USD" },
     { key: "angle", title: "Angle", unit: "Deg" },
     { key: "lengthbar", title: "Length", unit: "m" },
-    { key: "frequency", title: "Frequency", unit: "hz" }, 
-    { key: "pressure", title: "Pressure", unit: "bar" }, 
+    { key: "frequency", title: "Frequency", unit: "hz" },
+    { key: "pressure", title: "Pressure", unit: "bar" },
 ];
 
-// Initialize UI with default values (0) for all fields
+// Initialize UI with default (0) values
 function initializeDataSections() {
-    container.innerHTML = ""; // Clear previous data
+    container.innerHTML = ""; // Clear existing
     dataFields.forEach(field => createDataSection(field));
 }
 
-// Create a section for each data field
+// Create a data section
 function createDataSection({ key, title, unit }) {
     const section = document.createElement("div");
     section.id = `${key}-section`;
@@ -50,14 +51,11 @@ async function fetchData() {
         }
 
         const data = await response.json();
-        if (!Array.isArray(data) || data.length === 0) {
-            throw new Error("No valid data received");
-        }
 
-        // Get the latest data entry
-        const latestData = data[data.length - 1];
+        // Handle both array and object responses
+        const latestData = Array.isArray(data) ? data[data.length - 1] : data;
 
-        // Update UI for all fields dynamically
+        // Update all fields dynamically
         dataFields.forEach(({ key, unit }) => {
             updateDataSection(key, latestData[key] ?? 0, unit);
         });
@@ -67,7 +65,7 @@ async function fetchData() {
     }
 }
 
-// Update a data section for a specific field
+// Update a data section's value
 function updateDataSection(key, value, unit = "") {
     const section = document.querySelector(`#${key}-section`);
     if (section) {
@@ -76,28 +74,22 @@ function updateDataSection(key, value, unit = "") {
     }
 }
 
-// Toggle start/stop fetching data
+// Toggle start/stop fetching
 toggleButton.addEventListener("click", () => {
     if (fetchInterval) {
-        // Stop fetching
+        // Stop fetching and reset to zero
         clearInterval(fetchInterval);
         fetchInterval = null;
-
-        // Reset all data to 0 when stopped
         initializeDataSections();
 
         toggleButton.textContent = "Start";
         toggleButton.classList.replace("btn-danger", "btn-success");
         console.log("Fetching stopped. Data reset to 0.");
     } else {
-        // First reset all data to zero BEFORE starting
+        // Reset UI to zero and start fetching
         initializeDataSections();
-
-        // Fetch immediately after reset
-        fetchData();
-
-        // Start periodic fetching every 2 seconds
-        fetchInterval = setInterval(fetchData, 2000);
+        fetchData(); // Fetch immediately
+        fetchInterval = setInterval(fetchData, FETCH_INTERVAL_MS);
 
         toggleButton.textContent = "Stop Reading";
         toggleButton.classList.replace("btn-success", "btn-danger");
@@ -105,6 +97,5 @@ toggleButton.addEventListener("click", () => {
     }
 });
 
-
-// Initialize UI on page load
+// Initialize on page load
 initializeDataSections();

@@ -34,7 +34,7 @@ const connectToMongoDB = async () => {
 // ======================== Data Handling Functions ========================
 
 /*
- * Generate current "sensor data". Easily extendable to add new parameters.
+ * Generate current "sensor data". Easily extendable to add new parameters - Arduino sensor data, etc.
  */
 const generateSensorData = () => {
     return {
@@ -84,12 +84,14 @@ const postData = async (data) => {
 /*
  * Posts new sensor data every 2 seconds.
  */
+const FETCH_INTERVAL_MS = 2000; // Fetch every 2 seconds
+
 const startPeriodicDataPosting = async () => {
     try {
         setInterval(async () => {
             const newData = generateSensorData();
             await postData(newData);
-        }, 2000);
+        }, FETCH_INTERVAL_MS);
     } catch (error) {
         console.error('Failed to start periodic data posting:', error.message);
         process.exit(1);
