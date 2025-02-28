@@ -10,13 +10,15 @@ const toggleButton = document.getElementById("toggle-button");
 const container = document.querySelector("#dynamic-data-container");
 
 // List of Data Fields - Add more fields easily here
+// Case Sensitive: key must match the key in the JSON data
+// Add more fields as needed with the same structure (key, title, unit) 
 const dataFields = [
     { key: "load", title: "Load", unit: "kg" },
     { key: "cost", title: "Cost", unit: "USD" },
     { key: "angle", title: "Angle", unit: "Deg" },
     { key: "lengthbar", title: "Length", unit: "m" },
     { key: "frequency", title: "Frequency", unit: "hz" }, 
-    { key: "Pressure", title: "Pressure", unit: "bar" }, 
+    { key: "pressure", title: "Pressure", unit: "bar" }, 
 ];
 
 // Initialize UI with default values (0) for all fields

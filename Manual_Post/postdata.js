@@ -33,7 +33,7 @@ const connectToMongoDB = async () => {
 
 // ======================== Data Handling Functions ========================
 
-/**
+/*
  * Generate current "sensor data". Easily extendable to add new parameters.
  */
 const generateSensorData = () => {
@@ -47,10 +47,9 @@ const generateSensorData = () => {
     };
 };
 
-/**
+/*
  * Posts sensor data to MongoDB, logs it, and deletes all older documents.
  * Keeps only the latest inserted data.
- * @param {Object} data - The data object to insert.
  */
 const postData = async (data) => {
     try {
@@ -82,7 +81,7 @@ const postData = async (data) => {
 
 // ======================== Initialization & Periodic Data Posting ========================
 
-/**
+/*
  * Posts new sensor data every 2 seconds.
  */
 const startPeriodicDataPosting = async () => {
