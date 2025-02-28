@@ -13,9 +13,10 @@ const container = document.querySelector("#dynamic-data-container");
 const dataFields = [
     { key: "load", title: "Load", unit: "kg" },
     { key: "cost", title: "Cost", unit: "USD" },
-    { key: "angle", title: "Angle", unit: "°" },
+    { key: "angle", title: "Angle", unit: "Deg" },
     { key: "lengthbar", title: "Length", unit: "m" },
-    { key: "frequency", title: "Frequency", unit: "hz" }
+    { key: "frequency", title: "Frequency", unit: "hz" }, 
+    { key: "Pressure", title: "Pressure", unit: "bar" }, 
 ];
 
 // Initialize UI with default values (0) for all fields
@@ -76,6 +77,7 @@ function updateDataSection(key, value, unit = "") {
 // Toggle start/stop fetching data
 toggleButton.addEventListener("click", () => {
     if (fetchInterval) {
+        // Stop fetching
         clearInterval(fetchInterval);
         fetchInterval = null;
 
@@ -86,14 +88,21 @@ toggleButton.addEventListener("click", () => {
         toggleButton.classList.replace("btn-danger", "btn-success");
         console.log("Fetching stopped. Data reset to 0.");
     } else {
-        fetchData(); // Fetch immediately on start
-        fetchInterval = setInterval(fetchData, 2000); // Fetch every 2 seconds
+        // First reset all data to zero BEFORE starting
+        initializeDataSections();
+
+        // Fetch immediately after reset
+        fetchData();
+
+        // Start periodic fetching every 2 seconds
+        fetchInterval = setInterval(fetchData, 2000);
 
         toggleButton.textContent = "Stop Reading";
         toggleButton.classList.replace("btn-success", "btn-danger");
         console.log("Fetching started...");
     }
 });
+
 
 // Initialize UI on page load
 initializeDataSections();

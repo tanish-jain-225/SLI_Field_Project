@@ -22,9 +22,9 @@ const connectToMongoDB = async () => {
         client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
         try {
             await client.connect();
-            console.log('✅ Connected to MongoDB.');
+            console.log('Connected to MongoDB.');
         } catch (err) {
-            console.error('❌ MongoDB Connection Failed:', err.message);
+            console.error('MongoDB Connection Failed:', err.message);
             process.exit(1);
         }
     }
@@ -43,41 +43,49 @@ const generateSensorData = () => {
         angle: Math.random() * 360,
         lengthbar: Math.random() * 100,
         frequency: Math.random() * 1000,
+        pressure: Math.random() * 10000,
     };
 };
 
 /**
  * Posts sensor data to MongoDB, logs it, and deletes all older documents.
  * Keeps only the latest inserted data.
- * @param {Object} data - The data object to insert.
  */
 const postData = async (data) => {
+    const db = await connectToMongoDB();               // Ensure MongoDB connection is established
+    const collection = db.collection(collectionName);  // Access the specific collection
+
+    const session = client.startSession();             // Start a new session (required for transactions)
+
     try {
-        const db = await connectToMongoDB();
-        const collection = db.collection(collectionName);
+        session.startTransaction();                     // Start a transaction to group operations atomically
 
-        data.timestamp = new Date().toISOString(); // Add timestamp
+        data.timestamp = new Date().toISOString();      // Add a timestamp field to the sensor data
 
-        // Insert new data
-        const result = await collection.insertOne(data);
-        console.log('📥 Data Inserted:', JSON.stringify(data, null, 2));
+        // Step 1: Insert the new sensor data document into the collection within the transaction
+        const result = await collection.insertOne(data, { session });
+        console.log('Data Inserted:', JSON.stringify(data, null, 2));
 
-        // Fetch and delete all previous documents
-        const oldDocs = await collection.find({ _id: { $ne: result.insertedId } }).toArray();
+        // Step 2: Delete all older documents (documents other than the newly inserted one) within the transaction
+        const deleteResult = await collection.deleteMany(
+            { _id: { $ne: result.insertedId } },        // Filter: Delete all except the newly inserted document
+            { session }                                 // Ensure delete happens in the same transaction
+        );
 
-        if (oldDocs.length > 0) {
-            console.log('🗑️ Deleting Previous Documents:');
-            oldDocs.forEach(doc => console.log(JSON.stringify(doc, null, 2)));
-            const deleteResult = await collection.deleteMany({ _id: { $ne: result.insertedId } });
-            // console.log(`✅ Deleted ${deleteResult.deletedCount} old document(s).`);
-        } else {
-            console.log('✅ No previous documents to delete.');
-        }
+        console.log(`Deleted ${deleteResult.deletedCount} old document(s).`);
 
+        // Step 3: Commit the transaction — both insert and delete will be finalized only if this succeeds
+        await session.commitTransaction();
     } catch (error) {
-        console.error('❌ Error inserting data:', error.message);
+        console.error('Error during atomic insert and delete:', error.message);
+
+        // If any error occurs, rollback (undo) all operations performed in the transaction
+        await session.abortTransaction();
+    } finally {
+        session.endSession();                           // End the session (free up resources)
     }
 };
+
 
 // ======================== Initialization & Periodic Data Posting ========================
 
@@ -87,11 +95,15 @@ const postData = async (data) => {
 const startPeriodicDataPosting = async () => {
     try {
         setInterval(async () => {
-            const newData = generateSensorData();
-            await postData(newData);
+            try {
+                const newData = generateSensorData();
+                await postData(newData);
+            } catch (intervalError) {
+                console.error('Error during periodic data posting:', intervalError.message);
+            }
         }, 2000);
     } catch (error) {
-        console.error('❌ Failed to start periodic data posting:', error.message);
+        console.error('Failed to start periodic data posting:', error.message);
         process.exit(1);
     }
 };
@@ -99,10 +111,14 @@ const startPeriodicDataPosting = async () => {
 // ======================== Graceful Shutdown ========================
 
 const shutdown = async (reason) => {
-    console.log(`⚠️ Shutting down server: ${reason}`);
+    console.log(`Shutting down server: ${reason}`);
     if (client) {
-        await client.close();
-        console.log('✅ MongoDB connection closed.');
+        try {
+            await client.close();
+            console.log('MongoDB connection closed.');
+        } catch (closeError) {
+            console.error('Error closing MongoDB connection:', closeError.message);
+        }
     }
     process.exit(0);
 };
@@ -119,6 +135,6 @@ app.get('/health', (req, res) => {
 // ======================== Start Server ========================
 
 app.listen(port, async () => {
-    console.log(`🚀 Server running at http://localhost:${port}`);
+    console.log(`Server running at http://localhost:${port}`);
     await startPeriodicDataPosting();
 });
