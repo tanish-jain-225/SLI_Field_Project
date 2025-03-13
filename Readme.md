@@ -1,17 +1,35 @@
 ## SLI Field Project
 
-# To convert to localhost Version 
+### Project Description
+The SLI Field Project is a web application designed to manage and display field data. It consists of a backend server, a manual post data script, and a frontend client.
 
-- Check Manual_Post - > postdata.js For Port is 5000 
-- Check server -> index.js For port 3000
-- Set client -> script.js For fetchLink to "https://sli-field-project-backend.vercel.app/" 
+### To Convert to Localhost Version
+- Check `Manual_Post/postdata.js` for port 5000.
+- Check `server/index.js` for port 3000.
+- Set `client/script.js` fetchLink to "http://localhost:3000/".
 
-# For General Start 
+### Installation
 
-- Open A terminal and run command 'cd .\server\'
-- Run 'npm i'
-- Run 'node .\index.js'
-- Now Open another terminal run 'cd .\Manual_Post\'
-- Run 'npm i'
-- Run 'node .\postdata.js'
-- Atlast either run frontend of live server or run frontend at deployed link "https://sli-field-project-frontend.vercel.app/"
+1. **Backend Server**
+    - Open a terminal and run the following commands:
+      ```sh
+      cd ./server/
+      npm install
+      node ./index.js
+      ```
+
+2. **Manual Post Data Script**
+    - Open another terminal and run the following commands:
+      ```sh
+      cd ./Manual_Post/
+      npm install
+      node ./postdata.js
+      ```
+
+3. **Frontend Client**
+    - You can either run the frontend on a live server or access it at the deployed link: [SLI Field Project Frontend](https://sli-field-project-frontend.vercel.app/)
+
+### Usage
+- The backend server runs on port 3000.
+- The manual post data script runs on port 5000.
+- Ensure the frontend client fetches data from the correct backend URL.
