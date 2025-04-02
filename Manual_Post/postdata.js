@@ -44,6 +44,14 @@ const generateSensorData = () => {
         lengthbar: Math.random() * 100,
         frequency: Math.random() * 1000,
         pressure: Math.random() * 10000,
+        // Add more fields as needed
+        // temperature: Math.random() * 100,
+        // humidity: Math.random() * 100,
+        // vibration: Math.random() * 100,
+        // speed: Math.random() * 100,
+        // acceleration: Math.random() * 100,
+        // torque: Math.random() * 100,
+        // power: Math.random() * 100
     };
 };
 
@@ -65,14 +73,16 @@ const postData = async (data) => {
         // Fetch and delete all previous documents
         const oldDocs = await collection.find({ _id: { $ne: result.insertedId } }).toArray();
 
-        if (oldDocs.length > 0) {
-            console.log('Deleting Previous Documents:');
-            oldDocs.forEach(doc => console.log(JSON.stringify(doc, null, 2)));
-            const deleteResult = await collection.deleteMany({ _id: { $ne: result.insertedId } });
-            // console.log(`Deleted ${deleteResult.deletedCount} old document(s).`);
-        } else {
-            console.log('No previous documents to delete.');
-        }
+        // Optionally remove the old documents
+        // Uncomment the next line to delete all previous documents
+        // if (oldDocs.length > 0) {
+        //     console.log('Deleting Previous Documents:');
+        //     oldDocs.forEach(doc => console.log(JSON.stringify(doc, null, 2)));
+        //     const deleteResult = await collection.deleteMany({ _id: { $ne: result.insertedId } });
+        //     // console.log(`Deleted ${deleteResult.deletedCount} old document(s).`);
+        // } else {
+        //     console.log('No previous documents to delete.');
+        // }
 
     } catch (error) {
         console.error('Error inserting data:', error.message);
@@ -114,7 +124,7 @@ process.on('SIGTERM', () => shutdown('SIGTERM (Process Termination)'));
 
 // ======================== Health Check Endpoint (Optional) ========================
 
-app.get('/health', (req, res) => {
+app.get('/', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Server is running smoothly.' });
 });
 

@@ -20,6 +20,14 @@ const dataFields = [
     { key: "lengthbar", title: "Length", unit: "m" },
     { key: "frequency", title: "Frequency", unit: "hz" },
     { key: "pressure", title: "Pressure", unit: "bar" },
+    // Add more fields as needed
+    // { key: "temperature", title: "Temperature", unit: "°C" },
+    // { key: "humidity", title: "Humidity", unit: "%" },
+    // { key: "vibration", title: "Vibration", unit: "m/s²" },
+    // { key: "speed", title: "Speed", unit: "m/s" },
+    // { key: "acceleration", title: "Acceleration", unit: "m/s²" },
+    // { key: "torque", title: "Torque", unit: "Nm" },
+    // { key: "power", title: "Power", unit: "W" }
 ];
 
 // Initialize UI with default (0) values

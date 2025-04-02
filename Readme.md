@@ -1,7 +1,7 @@
 ## SLI Field Project
 
 ### Project Description
-The SLI Field Project is a web application designed to manage and display field data. It consists of a backend server, a manual post data script, and a frontend client.
+The SLI Field Project is a web application designed to manage and display field data. It consists of a backend server, a manual post data script, and a frontend client. 
 
 ### To Convert to Localhost Version
 - Check `Manual_Post/postdata.js` for port 5000.
