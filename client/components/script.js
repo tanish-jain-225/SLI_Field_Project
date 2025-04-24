@@ -1,5 +1,8 @@
 // Configurable Fetch URL - auto switch based on environment
-const fetchLink = 'http://localhost:3000'; // Replace with your backend URL
+const fetchLink = window.location.hostname === "localhost" ?
+    "http://localhost:3000" : // Localhost URL
+    "https://sli-field-project-backend.vercel.app/"; // Production URL
+    
 
 // Fetch Interval Controller
 let fetchInterval;
