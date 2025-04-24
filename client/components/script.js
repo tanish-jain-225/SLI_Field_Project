@@ -14,8 +14,8 @@ const lastUpdatedElement = document.getElementById("last-updated");
 
 // List of Data Fields - Add more fields here easily
 const dataFields = [
-    { key: "load", title: "Load", unit: "kg" },
     { key: "cost", title: "Cost", unit: "USD" },
+    { key: "load", title: "Load", unit: "kg" },
     { key: "angle", title: "Angle", unit: "Deg" },
     { key: "lengthbar", title: "Length", unit: "m" },
     { key: "frequency", title: "Frequency", unit: "hz" },

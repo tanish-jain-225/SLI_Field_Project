@@ -46,8 +46,8 @@ def generate_sensor_data():
     """
 
     return {
-        "load": random.uniform(0, 10),
         "cost": random.uniform(0, 100),
+        "load": random.uniform(0, 10),
         "angle": random.uniform(0, 360),
         "lengthbar": random.uniform(0, 100),
         "frequency": random.uniform(0, 1000),
