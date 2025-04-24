@@ -38,8 +38,8 @@ function initializeDataSections() {
         updateDataSection(field.key, 0, field.unit); // Explicitly reset data to 0
     });
     updateLastUpdated("Never");
-    console.log("UI initialized with default values.");
-    console.log("Data fields initialized:", dataFields);
+    // console.log("UI initialized with default values.");
+    // console.log("Data fields initialized:", dataFields);
 }
 
 // Create a data section
@@ -78,7 +78,7 @@ function updateLastUpdated(timestamp) {
 async function fetchData() {
     // Strict check at the beginning of the function
     if (fetchInterval === null) {
-        console.log("Fetching is stopped. Skipping fetchData call.");
+        // console.log("Fetching is stopped. Skipping fetchData call.");
         return;
     }
 
@@ -90,7 +90,7 @@ async function fetchData() {
 
         // Double check again after fetch to ensure we're still supposed to update UI
         if (fetchInterval === null) {
-            console.log("Fetching was stopped during request. Discarding results.");
+            // console.log("Fetching was stopped during request. Discarding results.");
             return;
         }
 
@@ -118,14 +118,14 @@ toggleButton.addEventListener("click", async () => {
         // Stop fetching - do this FIRST before any other operations
         clearInterval(fetchInterval);
         fetchInterval = null;
-        console.log("Interval cleared:", fetchInterval);
+        // console.log("Interval cleared:", fetchInterval);
 
         // Reset UI after stopping fetch
         initializeDataSections();
 
         toggleButton.textContent = "Start";
         toggleButton.classList.replace("btn-danger", "btn-success");
-        console.log("Fetching stopped. Data reset to 0.");
+        // console.log("Fetching stopped. Data reset to 0.");
     } else {
         // Start fetching
         initializeDataSections(); // Reset UI before starting
@@ -139,11 +139,11 @@ toggleButton.addEventListener("click", async () => {
         // Only set up the interval if fetching wasn't stopped during the first fetch
         if (fetchInterval !== null) {
             fetchInterval = setInterval(fetchData, FETCH_INTERVAL_MS);
-            console.log("Starting new interval:", fetchInterval);
+            // console.log("Starting new interval:", fetchInterval);
 
             toggleButton.textContent = "Stop Reading";
             toggleButton.classList.replace("btn-success", "btn-danger");
-            console.log("Fetching started...");
+            // console.log("Fetching started...");
         }
     }
 
