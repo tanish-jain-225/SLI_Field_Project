@@ -1,11 +1,9 @@
 // Configurable Fetch URL - auto switch based on environment
-const fetchLink = window.location.hostname === "localhost"
-    ? "http://localhost:3000/"
-    : "https://sli-field-project-backend.vercel.app/";
+const fetchLink = 'http://localhost:3000'; // Replace with your backend URL
 
 // Fetch Interval Controller
 let fetchInterval;
-const FETCH_INTERVAL_MS = 2000; // Fetch every 2 seconds
+const FETCH_INTERVAL_MS = 1000; // Fetch every 1 seconds
 
 // HTML Element References
 const toggleButton = document.getElementById("toggle-button");
@@ -20,12 +18,12 @@ const dataFields = [
     { key: "lengthbar", title: "Length", unit: "m" },
     { key: "frequency", title: "Frequency", unit: "hz" },
     { key: "pressure", title: "Pressure", unit: "bar" },
+    { key: "acceleration", title: "Acceleration", unit: "m/s²" },
     // Add more fields as needed
     // { key: "temperature", title: "Temperature", unit: "°C" },
     // { key: "humidity", title: "Humidity", unit: "%" },
     // { key: "vibration", title: "Vibration", unit: "m/s²" },
     // { key: "speed", title: "Speed", unit: "m/s" },
-    // { key: "acceleration", title: "Acceleration", unit: "m/s²" },
     // { key: "torque", title: "Torque", unit: "Nm" },
     // { key: "power", title: "Power", unit: "W" }
 ];
