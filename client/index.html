@@ -6,17 +6,26 @@
     <meta name="description" content="SLI Mini-Project Screen" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#198754" />
-
     <title>SLI - Miniproject</title>
 
+    <!-- Bootstrap CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <link rel="shortcut icon" href="./components/favicon.png" type="image/x-icon" />
+
+    <!-- Favicon -->
+    <link
+      rel="shortcut icon"
+      href="./components/favicon.png"
+      type="image/x-icon"
+    />
+
+    <!-- Preload Images -->
     <link rel="preload" href="./components/favicon.png" as="image" />
     <link rel="preload" href="./components/crane.jpg" as="image" />
 
+    <!-- Custom Styles -->
     <style>
       * {
         margin: 0;
@@ -24,60 +33,115 @@
         box-sizing: border-box;
       }
 
-      html,
       body {
-        height: 100%;
-      }
-
-      body {
-        display: flex;
-        flex-direction: column;
         min-height: 100vh;
+        background-color: #f0f2f5;
       }
 
       main {
-        flex-grow: 1;
+        flex: 1;
       }
 
       footer {
         margin-top: auto;
-        padding: 1rem 0;
+      }
+
+      .graph-container {
+        background-color: #ffffff;
+        border-radius: 0.5rem;
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .report-container {
+        background-color: #ffffff;
+        border-radius: 0.5rem;
+        min-height: 150px;
       }
     </style>
   </head>
 
   <body>
     <!-- Header -->
-    <header class="bg-dark text-white text-center py-3">
-      <div class="d-flex align-items-center justify-content-center">
+    <header class="bg-dark text-white py-3 shadow-sm">
+      <div
+        class="container d-flex flex-column flex-md-row align-items-center justify-content-center gap-3"
+      >
         <img
           src="./components/favicon.png"
           alt="SLI Logo"
-          class="me-2"
+          class="me-md-2"
           style="height: 50px"
         />
-        <h1 class="mb-0">SLI Mini-Project</h1>
+        <h1 class="mb-0 text-center text-md-start">SLI Mini-Project</h1>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="container mt-4">
-      <div class="card shadow p-4 m-2">
-        <div class="row flex-column flex-md-row">
-          <div class="col-md-6 text-center">
+    <main class="container custom-style">
+      <div class="row g-4 my-4">
+        <!-- Visualization Section -->
+        <div class="col-12 col-md-6">
+          <!-- image section  -->
+          <div class="mb-3 text-center">
             <img
               src="./components/crane.jpg"
               alt="Crane Image"
-              class="img-fluid rounded w-100"
+              class="img-fluid rounded shadow-sm"
+              style="object-fit: cover;"
             />
           </div>
-          <div class="col-md-6">
-            <!-- Data Cards -->
-            <div id="dynamic-data-container"></div>
+          <!-- Graph will be displayed here. -->
+          <div class="graph-container border p-2 shadow-sm">
+            <canvas id="dataChart" style="min-height: 300px"></canvas>
+          </div>
+        </div>
 
-            <!-- Start/Stop Button -->
-            <div class="d-flex justify-content-center mt-3 w-100">
-              <button id="toggle-button" class="btn btn-success w-100">Start Reading</button>
+        <!-- Data Section -->
+        <div class="col-12 col-md-6 d-flex flex-column">
+          <div id="dynamic-data-container" class="flex-grow-1 mb-3"></div>
+
+          <div class="text-center mb-2 text-secondary">
+            <small id="last-updated">Last Updated: Never</small>
+          </div>
+
+          <div>
+            <button id="toggle-button" class="btn btn-success w-100 py-2">
+              Start Reading
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overall Report Section -->
+      <div class="overall-report-container py-3 my-3">
+        <h2 class="text-center mb-4">Overall Report</h2>
+        <div class="d-flex flex-column flex-md-row gap-2">
+          <!-- cost section  -->
+          <div class="flex-grow-1 d-flex flex-column">
+            <h3 class="text-center mb-3">Cost Analysis</h3>
+            <div
+              id="cost-receipt"
+              class="bg-white rounded py-4 shadow-sm flex-grow-1 d-flex flex-column justify-content-center"
+            >
+              <span class="text-center">
+                Cost Analysis Will Be Shown Here
+              </span>
+            </div>
+          </div>
+
+          <!-- Operator Section -->
+          <div class="flex-grow-1 d-flex flex-column">
+            <h3 class="text-center mb-3">Operator Usage</h3>
+            <div
+              id="operator-feedback"
+              class="bg-white rounded py-4 shadow-sm flex-grow-1 d-flex flex-column justify-content-center"
+            >
+              <span class="text-center">
+                Operator Usage Will Be Shown Here
+              </span>
             </div>
           </div>
         </div>
@@ -85,12 +149,15 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-3">
-      <small>&copy; 2025 SLI Mini-Project. All rights reserved.</small>
+    <footer class="bg-dark text-white text-center py-3 mt-auto">
+      <div class="container">
+        <small>&copy; 2025 SLI Mini-Project. All rights reserved.</small>
+      </div>
     </footer>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="./components/script.js"></script>
   </body>
 </html>

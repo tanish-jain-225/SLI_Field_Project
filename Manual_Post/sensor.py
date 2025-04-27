@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from pymongo import MongoClient
 import os
 import random
@@ -8,24 +8,28 @@ from datetime import datetime
 import signal
 import sys
 
+import json
+import requests
+
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
 app = Flask(__name__)
-port = 5000
+PORT = 5000
 mongo_uri = os.getenv('MONGO_URI')
 db_name = os.getenv('DB_NAME')
 collection_name = os.getenv('C_NAME')
 
 # Check if environment variables are set
-FETCH_INTERVAL_SEC = 1  # Fetch every 1 seconds
+FETCH_INTERVAL_SEC = 1  # Fetch every 1 seconds - Used for testing
 
 # Global MongoDB Client (reused for efficiency)
 client = None
 
 # ======================== MongoDB Connection ========================
+
 
 def connect_to_mongodb():
     global client
@@ -40,27 +44,25 @@ def connect_to_mongodb():
 
 # ======================== Data Handling Functions ========================
 
-def generate_sensor_data():
+
+def post_sensor_data():
     """
-    Generate current "sensor data". Easily extendable to add new parameters - Arduinio Hardware Programming.
+    Generate current "sensor data". Easily extendable to add new parameters - Arduino Hardware Programming.
+    Returns data from localhost if available, otherwise generates random data as fallback.
     """
 
+    # Try to get data from localhost - Localhost Version
+    
+    # Fallback to random data if localhost request fails
     return {
-        "cost": random.uniform(0, 100),
-        "load": random.uniform(0, 10),
-        "angle": random.uniform(0, 360),
-        "lengthbar": random.uniform(0, 100),
-        "frequency": random.uniform(0, 1000),
-        "pressure": random.uniform(0, 10000),
-        "acceleration": random.uniform(0, 100),
-        # Add more fields as needed
-        # "temperature": random.uniform(0, 100),
-        # "humidity": random.uniform(0, 100),
-        # "vibration": random.uniform(0, 100),
-        # "speed": random.uniform(0, 100),
-        # "torque": random.uniform(0, 100),
-        # "power": random.uniform(0, 100),
+        "acceleration-x": random.uniform(0, 100),
+        "acceleration-y": random.uniform(0, 100),
+        "acceleration-z": random.uniform(0, 100),
+        "acceleration-net": random.uniform(0, 100),
+        "jerk": random.uniform(0, 100),
+        # Add more fields as needed if required
     }
+
 
 def post_data(data):
     """
@@ -78,7 +80,7 @@ def post_data(data):
         print("Data Inserted:", data)
 
         # Fetch and delete all previous documents
-        old_docs = collection.find({"_id": {"$ne": result.inserted_id}})
+        # old_docs = collection.find({"_id": {"$ne": result.inserted_id}})
 
         # Optionally remove the old documents
         # Uncomment the next lines to delete all previous documents
@@ -105,8 +107,9 @@ def start_periodic_data_posting():
     def post_data_periodically():
         while True:
             try:
-                new_data = generate_sensor_data()
+                new_data = post_sensor_data()
                 post_data(new_data)
+                # Can be removed to make it faster - Later if needed
                 time.sleep(FETCH_INTERVAL_SEC)
             except Exception as e:
                 print(f"Failed to post data periodically: {e}")
@@ -117,6 +120,7 @@ def start_periodic_data_posting():
 
 # ======================== Graceful Shutdown ========================
 
+
 def shutdown(reason):
     print(f"Shutting down server: {reason}")
     if client:
@@ -124,13 +128,16 @@ def shutdown(reason):
         print("MongoDB connection closed.")
     sys.exit(0)
 
+
 def signal_handler(sig, frame):
     shutdown(f"Signal {sig} received")
+
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 # ======================== Health Check Endpoint (Optional) ========================
+
 
 @app.route("/", methods=["GET"])
 def health_check():
@@ -138,7 +145,8 @@ def health_check():
 
 # ======================== Start Server ========================
 
+
 if __name__ == "__main__":
-    print(f"Server running at http://localhost:{port}")
+    print(f"Server running at http://localhost:{PORT}")
     start_periodic_data_posting()
-    app.run(port=port)
+    app.run(port=PORT)
