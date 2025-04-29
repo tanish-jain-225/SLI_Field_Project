@@ -1,7 +1,7 @@
 // Configurable Fetch URL - auto switch based on environment
 const fetchLink = window.location.hostname === "localhost" ?
     "http://localhost:3000" : // Localhost URL
-    "https://sli-field-project-backend.vercel.app/"; // Production URL
+    "https://sli-field-project-backend.vercel.app"; // Production URL
 
 // Fetch Interval Controller
 let fetchInterval;
@@ -23,13 +23,14 @@ const MINIMUM_CHARGE = 500; // Rs. 50 minimum charge
 // List of Data Fields - Add more fields here easily
 const dataFields = [
     // Sensor Data
-    { key: "acceleration-x", title: "Acceleration-X", unit: "m/s²" },
-    { key: "acceleration-y", title: "Acceleration-Y", unit: "m/s²" },
-    { key: "acceleration-z", title: "Acceleration-Z", unit: "m/s²" },
-
-    // Important fields
-    { key: "acceleration-net", title: "Net Acceleration", unit: "m/s²" },
-    { key: "jerk", title: "Net Jerk", unit: "m/s³" },
+    { key: "acceleration_x", title: "Acceleration-X", unit: "m/s²" },
+    { key: "acceleration_y", title: "Acceleration-Y", unit: "m/s²" },
+    { key: "acceleration_z", title: "Acceleration-Z", unit: "m/s²" },
+    { key: "acceleration_net", title: "Net Acceleration", unit: "m/s²" },
+    { key: "rotation_x", title: "Rotation-X", unit: "m/s" },
+    { key: "rotation_y", title: "Rotation-Y", unit: "m/s" },
+    { key: "rotation_z", title: "Rotation-Z", unit: "m/s" },
+    { key: "jerk", title: "Jerk", unit: "m/s" },
 
     // Add more fields as needed - Optional
     // { key: "cost", title: "Cost", unit: "USD" },

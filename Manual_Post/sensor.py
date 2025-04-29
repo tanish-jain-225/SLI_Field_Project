@@ -47,21 +47,48 @@ def connect_to_mongodb():
 
 def post_sensor_data():
     """
-    Generate current "sensor data". Easily extendable to add new parameters - Arduino Hardware Programming.
-    Returns data from localhost if available, otherwise generates random data as fallback.
+    Generate current "sensor data". Easily extendable to add new parameters
     """
+    ip_address = "192.168.134.175"  # To be updated
 
-    # Try to get data from localhost - Localhost Version
-    
-    # Fallback to random data if localhost request fails
-    return {
-        "acceleration-x": random.uniform(0, 100),
-        "acceleration-y": random.uniform(0, 100),
-        "acceleration-z": random.uniform(0, 100),
-        "acceleration-net": random.uniform(0, 100),
-        "jerk": random.uniform(0, 100),
-        # Add more fields as needed if required
-    }
+    try:
+        response = requests.get(f"http://{ip_address}")
+        response_data = response.json()
+
+        # If response is a list of items, take the first one
+        if isinstance(response_data, list) and response_data:
+            item = response_data[-1] # Get the last item in the list - Most recent data which was added in backend server will be available at the end of the list
+        # If response is a dictionary, use it directly
+        elif isinstance(response_data, dict):
+            item = response_data
+        else:
+            raise ValueError("Unexpected response format")
+
+        # Process sensor data
+        data = {
+            "acceleration_x": item["accX"],
+            "acceleration_y": item["accY"],
+            "acceleration_z": item["accZ"],
+            "acceleration_net": int((item["accX"]**2 + item["accY"]**2 + item["accZ"]**2)**0.5),
+            "rotation_x": item["rotX"],
+            "rotation_y": item["rotY"],
+            "rotation_z": item["rotZ"],
+            "jerk": item["jerk"],
+        }
+        return data
+
+    except Exception as e:
+        print(f"Error fetching sensor data: {e}")
+        return {
+            "acceleration_x": 0.00,
+            "acceleration_y": 0.00,
+            "acceleration_z": 0.00,
+            "acceleration_net": 0.00,
+            "rotation_x": 0.00,
+            "rotation_y": 0.00,
+            "rotation_z": 0.00,
+            "jerk": 0.00,
+        }
 
 
 def post_data(data):
@@ -96,6 +123,7 @@ def post_data(data):
 
     except Exception as e:
         print(f"Error inserting data: {e}")
+        return None
 
 # ======================== Initialization & Periodic Data Posting ========================
 
