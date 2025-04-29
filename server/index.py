@@ -19,7 +19,7 @@ collection_name = os.getenv("C_NAME")  # The collection where data will be saved
 client = MongoClient(mongo_uri)
 
 
-# Routes
+# Routes 
 @app.route("/", methods=["GET"])
 def get_items():
     try:
@@ -35,12 +35,13 @@ def get_items():
         # Fetch and serialize items
         items = list(collection.find())
         for item in items:
-            item["_id"] = str(item["_id"])  # Convert ObjectId to string for JSON
-        return jsonify(items)
+            item["_id"] = str(item["_id"])  # Convert ObjectId to string for JSON - Takes 0.5 seconds
+        return jsonify(items) # Return the items as JSON - Takes 0.5 seconds
     except Exception as e:
         print(f"Error fetching data: {e}")
         return jsonify({"message": "Internal server error"}), 500
 
 # Start the Server Only After Database is Initialized
 if __name__ == "__main__":
-    app.run(port=PORT)
+    app.run(port=PORT) # Time taken to start the server is 0.5 seconds
+    # Total time taken for code to run is 1.5 seconds

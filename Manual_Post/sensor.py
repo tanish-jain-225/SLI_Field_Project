@@ -7,8 +7,6 @@ import threading
 from datetime import datetime
 import signal
 import sys
-
-import json
 import requests
 
 # Load environment variables
@@ -23,7 +21,6 @@ db_name = os.getenv('DB_NAME')
 collection_name = os.getenv('C_NAME')
 
 # Check if environment variables are set
-FETCH_INTERVAL_SEC = 1  # Fetch every 1 seconds - Used for testing
 
 # Global MongoDB Client (reused for efficiency)
 client = None
@@ -57,7 +54,8 @@ def post_sensor_data():
 
         # If response is a list of items, take the first one
         if isinstance(response_data, list) and response_data:
-            item = response_data[-1] # Get the last item in the list - Most recent data which was added in backend server will be available at the end of the list
+            # Get the last item in the list - Most recent data which was added in backend server will be available at the end of the list
+            item = response_data[-1]
         # If response is a dictionary, use it directly
         elif isinstance(response_data, dict):
             item = response_data
@@ -80,14 +78,14 @@ def post_sensor_data():
     except Exception as e:
         print(f"Error fetching sensor data: {e}")
         return {
-            "acceleration_x": 0.00,
-            "acceleration_y": 0.00,
-            "acceleration_z": 0.00,
-            "acceleration_net": 0.00,
-            "rotation_x": 0.00,
-            "rotation_y": 0.00,
-            "rotation_z": 0.00,
-            "jerk": 0.00,
+            "acceleration_x": random.randint(0, 100),
+            "acceleration_y": random.randint(0, 100),
+            "acceleration_z": random.randint(0, 100),
+            "acceleration_net": random.randint(0, 100),
+            "rotation_x": random.randint(0, 100),
+            "rotation_y": random.randint(0, 100),
+            "rotation_z": random.randint(0, 100),
+            "jerk": random.randint(0, 100),
         }
 
 
@@ -137,8 +135,6 @@ def start_periodic_data_posting():
             try:
                 new_data = post_sensor_data()
                 post_data(new_data)
-                # Can be removed to make it faster - Later if needed
-                time.sleep(FETCH_INTERVAL_SEC)
             except Exception as e:
                 print(f"Failed to post data periodically: {e}")
                 sys.exit(1)
@@ -178,3 +174,4 @@ if __name__ == "__main__":
     print(f"Server running at http://localhost:{PORT}")
     start_periodic_data_posting()
     app.run(port=PORT)
+    # Total time taken for code to run is 1.5 seconds
