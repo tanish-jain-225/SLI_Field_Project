@@ -46,47 +46,57 @@ def post_sensor_data():
     """
     Generate current "sensor data". Easily extendable to add new parameters
     """
-    ip_address = "192.168.134.175"  # To be updated
+    # ip_address = "192.168.134.175"  # To be updated
 
-    try:
-        response = requests.get(f"http://{ip_address}")
-        response_data = response.json()
+    # try:
+    #     response = requests.get(f"http://{ip_address}")
+    #     response_data = response.json()
 
-        # If response is a list of items, take the first one
-        if isinstance(response_data, list) and response_data:
-            # Get the last item in the list - Most recent data which was added in backend server will be available at the end of the list
-            item = response_data[-1]
-        # If response is a dictionary, use it directly
-        elif isinstance(response_data, dict):
-            item = response_data
-        else:
-            raise ValueError("Unexpected response format")
+    #     # If response is a list of items, take the first one
+    #     if isinstance(response_data, list) and response_data:
+    #         # Get the last item in the list - Most recent data which was added in backend server will be available at the end of the list
+    #         item = response_data[-1]
+    #     # If response is a dictionary, use it directly
+    #     elif isinstance(response_data, dict):
+    #         item = response_data
+    #     else:
+    #         raise ValueError("Unexpected response format")
 
-        # Process sensor data
-        data = {
-            "acceleration_x": item["accX"],
-            "acceleration_y": item["accY"],
-            "acceleration_z": item["accZ"],
-            "acceleration_net": int((item["accX"]**2 + item["accY"]**2 + item["accZ"]**2)**0.5),
-            "rotation_x": item["rotX"],
-            "rotation_y": item["rotY"],
-            "rotation_z": item["rotZ"],
-            "jerk": item["jerk"],
-        }
-        return data
+    #     # Process sensor data
+    #     data = {
+    #         "acceleration_x": item["accX"],
+    #         "acceleration_y": item["accY"],
+    #         "acceleration_z": item["accZ"],
+    #         "acceleration_net": int((item["accX"]**2 + item["accY"]**2 + item["accZ"]**2)**0.5),
+    #         "rotation_x": item["rotX"],
+    #         "rotation_y": item["rotY"],
+    #         "rotation_z": item["rotZ"],
+    #         "jerk": item["jerk"],
+    #     }
+    #     return data
 
-    except Exception as e:
-        print(f"Error fetching sensor data: {e}")
-        return {
-            "acceleration_x": random.randint(0, 100),
-            "acceleration_y": random.randint(0, 100),
-            "acceleration_z": random.randint(0, 100),
-            "acceleration_net": random.randint(0, 100),
-            "rotation_x": random.randint(0, 100),
-            "rotation_y": random.randint(0, 100),
-            "rotation_z": random.randint(0, 100),
-            "jerk": random.randint(0, 100),
-        }
+    # except Exception as e:
+    #     print(f"Error fetching sensor data: {e}")
+    #     return {
+    #         "acceleration_x": random.randint(0, 10),
+    #         "acceleration_y": random.randint(0, 10),
+    #         "acceleration_z": random.randint(0, 10),
+    #         "acceleration_net": random.randint(0, 10),
+    #         "rotation_x": random.randint(0, 10),
+    #         "rotation_y": random.randint(0, 10),
+    #         "rotation_z": random.randint(0, 10),
+    #         "jerk": random.randint(0, 10),
+    #     }
+    return {
+        "acceleration_x": random.randint(0, 10),
+        "acceleration_y": random.randint(0, 10),
+        "acceleration_z": random.randint(0, 10),
+        "acceleration_net": random.randint(0, 10),
+        "rotation_x": random.randint(0, 10),
+        "rotation_y": random.randint(0, 10),
+        "rotation_z": random.randint(0, 10),
+        "jerk": random.randint(0, 10),
+    }
 
 
 def post_data(data):
@@ -128,12 +138,13 @@ def post_data(data):
 
 def start_periodic_data_posting():
     """
-    Posts new sensor data every 2 seconds.
+    Posts new sensor data every 1 seconds.
     """
     def post_data_periodically():
         while True:
             try:
                 new_data = post_sensor_data()
+                time.sleep(1)  # Wait for 1 seconds before posting again
                 post_data(new_data)
             except Exception as e:
                 print(f"Failed to post data periodically: {e}")

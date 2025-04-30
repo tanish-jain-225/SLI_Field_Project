@@ -116,7 +116,7 @@ function updateLastUpdated(timestamp) {
 // Initialize chart
 function initializeChart() {
     const ctx = document.getElementById('dataChart').getContext('2d');
-    
+
     // Destroy existing chart if it exists
     if (chart) {
         chart.destroy();
@@ -161,33 +161,33 @@ function updateChart(latestData) {
     // Add timestamp as label
     const now = new Date();
     const timeString = now.getHours().toString().padStart(2, '0') + ':' +
-                       now.getMinutes().toString().padStart(2, '0') + ':' +
-                       now.getSeconds().toString().padStart(2, '0');
-    
+        now.getMinutes().toString().padStart(2, '0') + ':' +
+        now.getSeconds().toString().padStart(2, '0');
+
     chartData.labels.push(timeString);
-    
+
     // Limit the number of data points
     if (chartData.labels.length > maxDataPoints) {
         chartData.labels.shift();
     }
-    
+
     // Update each dataset with new values
     dataFields.forEach((field, index) => {
         const value = latestData[field.key] ?? 0;
         chartData.datasets[index].data.push(value);
-        
+
         // Limit the number of data points
         if (chartData.datasets[index].data.length > maxDataPoints) {
             chartData.datasets[index].data.shift();
         }
     });
-    
+
     // Store usage data for analysis
     usageData.push({
         timestamp: new Date(),
         ...latestData
     });
-    
+
     // Update chart
     if (chart) {
         chart.update();
@@ -197,20 +197,20 @@ function updateChart(latestData) {
 // Generate cost receipt based on usage time
 function generateCostReceipt() {
     if (!startTime) return;
-    
+
     const endTime = new Date();
     const usageTimeMs = endTime - startTime;
     const usageTimeMinutes = usageTimeMs / (1000 * 60);
     const usageTimeHours = usageTimeMinutes / 60;
-    
+
     // Calculate cost (minimum charge or hourly rate)
     const calculatedCost = Math.max(MINIMUM_CHARGE, usageTimeHours * HOURLY_RATE);
     const formattedCost = calculatedCost.toFixed(2);
-    
+
     // Format dates for receipt
     const startTimeFormatted = startTime.toLocaleString();
     const endTimeFormatted = endTime.toLocaleString();
-    
+
     // Create receipt HTML with flexbox layout
     const receiptHTML = `
         <div class="mt-3 border p-2 rounded bg-light">
@@ -255,32 +255,214 @@ function generateCostReceipt() {
             </div>
         </div>
     `;
-    
+
     // Display receipt in the designated element
     if (costReceiptElement) {
         costReceiptElement.innerHTML = receiptHTML;
     }
 }
 
-// Generate operator feedback based on usage data
+// Analyze acceleration data from usage - Optimized version
+function analyzeAccelerationData() {
+    if (usageData.length === 0) return { max: 0, avg: 0, sudden: 0, variations: 0 };
+
+    // Extract net acceleration values
+    const accelerations = usageData.map(data => Number(data.acceleration_net) || 0);
+
+    // Calculate statistics in single pass for better performance
+    let max = -Infinity;
+    let sum = 0;
+    let variations = 0;
+    let prevValue = accelerations[0];
+
+    for (let i = 0; i < accelerations.length; i++) {
+        const value = accelerations[i];
+        max = Math.max(max, value);
+        sum += value;
+
+        // Calculate variations (changes in direction)
+        if (i > 0 && Math.sign(value - prevValue) !== Math.sign(prevValue - (accelerations[i - 2] || 0))) {
+            variations++;
+        }
+        prevValue = value;
+    }
+
+    const avg = sum / accelerations.length;
+
+    // Count sudden changes (values above threshold)
+    const threshold = avg * 1.5;
+    const sudden = accelerations.filter(value => value > threshold).length;
+
+    return { max, avg, sudden, variations };
+}
+
+// Analyze jerk data from usage - Optimized version
+function analyzeJerkData() {
+    if (usageData.length === 0) return { max: 0, avg: 0, sudden: 0, consistency: 0 };
+
+    // Extract jerk values with proper error handling
+    const jerks = usageData.map(data => Number(data.jerk) || 0);
+
+    // Calculate statistics in single pass
+    let max = -Infinity;
+    let sum = 0;
+    let prevDiffs = [];
+
+    for (const value of jerks) {
+        max = Math.max(max, value);
+        sum += value;
+    }
+
+    const avg = sum / jerks.length;
+
+    // Calculate consistency score
+    let consistencyScore = 0;
+    if (jerks.length > 1) {
+        // Calculate standard deviation for consistency measurement
+        const squaredDiffs = jerks.map(value => Math.pow(value - avg, 2));
+        const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / jerks.length;
+        const stdDev = Math.sqrt(variance);
+
+        // Lower standard deviation = higher consistency
+        consistencyScore = Math.max(0, 100 - (stdDev / avg * 100));
+    }
+
+    // Count sudden changes (values above threshold) - more nuanced threshold
+    const threshold = avg * 1.5;
+    const sudden = jerks.filter(value => value > threshold).length;
+
+    return {
+        max,
+        avg,
+        sudden,
+        consistency: consistencyScore
+    };
+}
+
+// Calculate operator skill level based on acceleration and jerk statistics - Enhanced version
+function calculateSkillLevel(accelerationStats, jerkStats) {
+    // Base score starts at 100 (perfect)
+    let score = 100;
+
+    // Calculate penalties with diminishing returns for fairer scoring
+
+    // Penalty for sudden accelerations (harsh movements)
+    const suddenAccelPenalty = Math.min(25, accelerationStats.sudden * 1.5);
+
+    // Penalty for high acceleration variation
+    const accelRatio = accelerationStats.max / (accelerationStats.avg || 1); // Prevent division by zero
+    const accelVariationPenalty = Math.min(20, (accelRatio - 1) * 8);
+
+    // Penalty for jerky operation
+    const jerkPenalty = Math.min(25, jerkStats.sudden * 1.5);
+
+    // Bonus for consistent operation
+    const consistencyBonus = jerkStats.consistency / 10;
+
+    // Calculate final score with all factors
+    score -= suddenAccelPenalty;
+    score -= accelVariationPenalty;
+    score -= jerkPenalty;
+    score += consistencyBonus;
+
+    // Add penalty for excessive movement variations
+    if (accelerationStats.variations > 0) {
+        score -= Math.min(15, accelerationStats.variations * 0.5);
+    }
+
+    // Ensure score is between 0 and 100
+    return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// Get color for skill level progress bar - Enhanced with more granular levels
+function getSkillColor(skillLevel) {
+    if (skillLevel < 30) return 'danger';
+    if (skillLevel < 50) return 'warning';
+    if (skillLevel < 70) return 'info';
+    if (skillLevel < 90) return 'primary';
+    return 'success';
+}
+
+// Get text rating based on skill level - Enhanced with more levels
+function getSkillRating(skillLevel) {
+    if (skillLevel < 30) return 'Needs Training';
+    if (skillLevel < 50) return 'Adequate';
+    if (skillLevel < 70) return 'Skilled';
+    if (skillLevel < 85) return 'Expert';
+    if (skillLevel < 95) return 'Advanced Expert';
+    return 'Master Operator';
+}
+
+// Generate feedback text based on skill level and stats - Enhanced with more detailed feedback
+function generateFeedbackText(skillLevel, accelerationStats, jerkStats) {
+    // Base feedback by skill level
+    let feedbackPoints = [];
+
+    if (skillLevel < 30) {
+        feedbackPoints.push('Operator shows signs of inexperience with jerky movements.');
+        feedbackPoints.push('Additional training is strongly recommended.');
+    } else if (skillLevel < 50) {
+        feedbackPoints.push('Operator handled the crane with adequate control.');
+        feedbackPoints.push('Significant improvements needed in smoothness of operation.');
+    } else if (skillLevel < 70) {
+        feedbackPoints.push('Skilled operation with good basic control demonstrated.');
+        feedbackPoints.push('Some improvements could be made in acceleration management.');
+    } else if (skillLevel < 85) {
+        feedbackPoints.push('Expert handling shown with smooth operation.');
+        feedbackPoints.push('Minor refinements would perfect the technique.');
+    } else if (skillLevel < 95) {
+        feedbackPoints.push('Advanced expert level operation with excellent control.');
+    } else {
+        feedbackPoints.push('Outstanding crane operation with perfect control and extremely smooth movements.');
+    }
+
+    // Add specific feedback based on metrics
+    if (accelerationStats.sudden > 3) {
+        feedbackPoints.push(`Reduce sudden accelerations (${accelerationStats.sudden} detected) for safer operation.`);
+    }
+
+    if (jerkStats.max > jerkStats.avg * 2) {
+        feedbackPoints.push('Work on maintaining more consistent movement speeds.');
+    }
+
+    if (accelerationStats.variations > 5) {
+        feedbackPoints.push('Too many direction changes detected. Focus on smoother transitions.');
+    }
+
+    if (jerkStats.consistency < 50) {
+        feedbackPoints.push('Improve motion consistency for better load control.');
+    }
+
+    // Join all feedback points with spaces
+    return feedbackPoints.join(' ');
+}
+
+// Generate operator feedback based on usage data - Optimized UI generation
 function generateOperatorFeedback() {
     if (usageData.length === 0) return;
-    
+
     // Analyze acceleration and jerk data
     const accelerationStats = analyzeAccelerationData();
     const jerkStats = analyzeJerkData();
-    
+
     // Determine operator skill level based on analysis
     const skillLevel = calculateSkillLevel(accelerationStats, jerkStats);
-    
-    // Create feedback HTML with flexbox layout
+
+    // Get skill color and rating once to avoid redundant calculations
+    const skillColor = getSkillColor(skillLevel);
+    const skillRatingText = getSkillRating(skillLevel);
+
+    // Generate feedback text
+    const feedbackText = generateFeedbackText(skillLevel, accelerationStats, jerkStats);
+
+    // Create feedback HTML with flexbox layout - optimized structure
     const feedbackHTML = `
         <div class="mt-3 border p-2 rounded bg-light">
-            <h4 class="text-center border-bottom pb-2 mb-3">Operator Performance</h4>
+            <h4 class="text-center border-bottom pb-2 mb-3">Operator Performance Analysis</h4>
             <div class="row mb-3">
                 <div class="col-12">
-                    <div class="progress">
-                        <div class="progress-bar bg-${getSkillColor(skillLevel)}" 
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-${skillColor}" 
                              role="progressbar" 
                              style="width: ${skillLevel}%" 
                              aria-valuenow="${skillLevel}" 
@@ -296,7 +478,7 @@ function generateOperatorFeedback() {
                 <div class="flex-fill mb-2 me-2">
                     <div class="p-2 border rounded h-100">
                         <div class="fw-bold mb-1">Skill Rating</div>
-                        <div class="fs-5 text-${getSkillColor(skillLevel)}">${getSkillRating(skillLevel)}</div>
+                        <div class="fs-5 text-${skillColor}">${skillRatingText}</div>
                     </div>
                 </div>
                 <div class="flex-fill mb-2 me-2">
@@ -307,8 +489,8 @@ function generateOperatorFeedback() {
                 </div>
                 <div class="flex-fill mb-2">
                     <div class="p-2 border rounded h-100">
-                        <div class="fw-bold mb-1">Max Jerk</div>
-                        <div class="fs-5">${jerkStats.max.toFixed(2)} m/s³</div>
+                        <div class="fw-bold mb-1">Consistency</div>
+                        <div class="fs-5">${Math.round(jerkStats.consistency)}%</div>
                     </div>
                 </div>
             </div>
@@ -316,121 +498,17 @@ function generateOperatorFeedback() {
             <div class="row mt-3">
                 <div class="col-12">
                     <div class="p-2 border rounded">
-                        <strong>Feedback:</strong> ${generateFeedbackText(skillLevel, accelerationStats, jerkStats)}
+                        <strong>Performance Feedback:</strong> ${feedbackText}
                     </div>
                 </div>
             </div>
         </div>
     `;
-    
+
     // Display feedback in the designated element
     if (operatorFeedbackElement) {
         operatorFeedbackElement.innerHTML = feedbackHTML;
     }
-}
-
-// Analyze acceleration data from usage
-function analyzeAccelerationData() {
-    if (usageData.length === 0) return { max: 0, avg: 0, sudden: 0 };
-    
-    // Extract net acceleration values
-    const accelerations = usageData.map(data => data['acceleration-net'] || 0);
-    
-    // Calculate statistics
-    const max = Math.max(...accelerations);
-    const avg = accelerations.reduce((sum, val) => sum + val, 0) / accelerations.length;
-    
-    // Count sudden changes (values above threshold)
-    const threshold = avg * 1.5;
-    const sudden = accelerations.filter(value => value > threshold).length;
-    
-    return { max, avg, sudden };
-}
-
-// Analyze jerk data from usage
-function analyzeJerkData() {
-    if (usageData.length === 0) return { max: 0, avg: 0, sudden: 0 };
-    
-    // Extract jerk values
-    const jerks = usageData.map(data => data['jerk'] || 0);
-    
-    // Calculate statistics
-    const max = Math.max(...jerks);
-    const avg = jerks.reduce((sum, val) => sum + val, 0) / jerks.length;
-    
-    // Count sudden changes (values above threshold)
-    const threshold = avg * 1.5;
-    const sudden = jerks.filter(value => value > threshold).length;
-    
-    return { max, avg, sudden };
-}
-
-// Calculate operator skill level based on acceleration and jerk statistics
-function calculateSkillLevel(accelerationStats, jerkStats) {
-    // Base score starts at 100 (perfect)
-    let score = 100;
-    
-    // Reduce score based on sudden accelerations (harsh movements)
-    score -= Math.min(30, accelerationStats.sudden * 2);
-    
-    // Reduce score based on max acceleration relative to average
-    const accelRatio = accelerationStats.max / accelerationStats.avg;
-    score -= Math.min(20, (accelRatio - 1) * 10);
-    
-    // Reduce score based on jerk statistics (smoothness of operation)
-    score -= Math.min(30, jerkStats.sudden * 2);
-    
-    // Reduce score based on max jerk relative to average
-    const jerkRatio = jerkStats.max / jerkStats.avg;
-    score -= Math.min(20, (jerkRatio - 1) * 10);
-    
-    // Ensure score is between 0 and 100
-    return Math.max(0, Math.min(100, Math.round(score)));
-}
-
-// Get color for skill level progress bar
-function getSkillColor(skillLevel) {
-    if (skillLevel < 40) return 'danger';
-    if (skillLevel < 60) return 'warning';
-    if (skillLevel < 80) return 'info';
-    return 'success';
-}
-
-// Get text rating based on skill level
-function getSkillRating(skillLevel) {
-    if (skillLevel < 40) return 'Needs Training';
-    if (skillLevel < 60) return 'Adequate';
-    if (skillLevel < 80) return 'Skilled';
-    if (skillLevel < 95) return 'Expert';
-    return 'Master Operator';
-}
-
-// Generate feedback text based on skill level and stats
-function generateFeedbackText(skillLevel, accelerationStats, jerkStats) {
-    let feedback = '';
-    
-    if (skillLevel < 40) {
-        feedback = 'Operator shows signs of inexperience with jerky and sudden movements. Additional training recommended.';
-    } else if (skillLevel < 60) {
-        feedback = 'Operator handled the crane with adequate control but could improve on smoothness of operation.';
-    } else if (skillLevel < 80) {
-        feedback = 'Skilled operation demonstrated with good control. Minor improvements could be made in acceleration management.';
-    } else if (skillLevel < 95) {
-        feedback = 'Expert handling shown with very smooth operation and excellent control.';
-    } else {
-        feedback = 'Outstanding crane operation with perfect control and extremely smooth movements.';
-    }
-    
-    // Add specific feedback if there were issues
-    if (accelerationStats.sudden > 5) {
-        feedback += ' Reduce sudden accelerations for safer operation.';
-    }
-    
-    if (jerkStats.max > jerkStats.avg * 2) {
-        feedback += ' Work on maintaining more consistent movement speeds.';
-    }
-    
-    return feedback;
 }
 
 // Fetch data from backend and update UI
@@ -493,11 +571,11 @@ toggleButton.addEventListener("click", async () => {
         // Clear previous reports
         if (costReceiptElement) costReceiptElement.innerHTML = '';
         if (operatorFeedbackElement) operatorFeedbackElement.innerHTML = '';
-        
+
         // Reset usage data and start time
         usageData = [];
         startTime = new Date();
-        
+
         // Reset UI before starting
         initializeDataSections();
         initializeChart();
