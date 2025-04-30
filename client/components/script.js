@@ -17,7 +17,7 @@ const operatorFeedbackElement = document.getElementById("operator-feedback");
 // Time and cost tracking
 let startTime = null;
 let usageData = [];
-const HOURLY_RATE = 1000; // Rs. 150 per hour crane rental
+const HOURLY_RATE = 800; // Rs. 150 per hour crane rental
 const MINIMUM_CHARGE = 500; // Rs. 50 minimum charge
 
 // List of Data Fields - Add more fields here easily
@@ -33,7 +33,6 @@ const dataFields = [
     { key: "jerk", title: "Jerk", unit: "m/s" },
 
     // Add more fields as needed - Optional
-    // { key: "cost", title: "Cost", unit: "USD" },
     // { key: "load", title: "Load", unit: "kg" },
     // { key: "angle", title: "Angle", unit: "Deg" },
     // { key: "lengthbar", title: "Length", unit: "m" },
