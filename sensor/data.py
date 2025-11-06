@@ -133,8 +133,6 @@ def post_data(data):
 
         # Insert new data
         result = collection.insert_one(data)
-        # Keep logging minimal to avoid spamming in high-frequency runs
-        print("Data inserted, _id:", getattr(result, 'inserted_id', None))
 
         # Fetch and delete all previous documents
         # old_docs = collection.find({"_id": {"$ne": result.inserted_id}})
@@ -171,6 +169,7 @@ def start_periodic_data_posting():
             try:
                 new_data = post_sensor_data()
                 post_data(new_data)
+                print(f"Posted new data: {new_data}")
                 # Reset backoff on success
                 backoff = 1.0
             except Exception as e:

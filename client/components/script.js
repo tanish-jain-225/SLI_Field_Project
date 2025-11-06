@@ -5,7 +5,11 @@ const fetchLink = window.location.hostname === "localhost" ?
 
 // Fetch Interval Controller
 let fetchInterval;
-const FETCH_INTERVAL_MS = 1000; // Fetch every 1 second
+
+// Get configurable constants from environment or use defaults - Converted to numbers
+const FETCH_INTERVAL_MS = Number(process.env.FETCH_INTERVAL_MS)
+const HOURLY_RATE = Number(process.env.HOURLY_RATE)
+const MINIMUM_CHARGE = Number(process.env.MINIMUM_CHARGE)
 
 // HTML Element References
 const toggleButton = document.getElementById("toggle-button");
@@ -17,8 +21,6 @@ const operatorFeedbackElement = document.getElementById("operator-feedback");
 // Time and cost tracking
 let startTime = null;
 let usageData = [];
-const HOURLY_RATE = 800; // Rs. 150 per hour crane rental
-const MINIMUM_CHARGE = 500; // Rs. 50 minimum charge
 
 // List of Data Fields - Add more fields here easily
 const dataFields = [

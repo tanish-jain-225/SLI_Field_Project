@@ -1,199 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="SLI Mini-Project Screen" />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#198754" />
-    <title>SLI - Miniproject</title>
+    <meta name="theme-color" content="#0d6efd" />
+    <title>SLI — Field Project</title>
 
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-
-    <!-- Favicon -->
-    <link
-      rel="shortcut icon"
-      href="./components/favicon.png"
-      type="image/x-icon"
-    />
-
-    <!-- Preload Images -->
     <link rel="preload" href="./components/favicon.png" as="image" />
     <link rel="preload" href="./components/crane.jpg" as="image" />
 
-    <!-- Custom Styles (responsive) -->
+    <!-- Minimal reset + modern base styles -->
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+      :root{
+        --bg:#f6f8fb;
+        --card:#ffffff;
+        --muted:#6c757d;
+        --accent:#0d6efd;
+        --success:#198754;
+        --gap:1rem;
+        --radius:12px;
+        --max-width:1200px;
+        --shadow: 0 6px 18px rgba(15,23,42,0.06);
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0;
+        font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial;
+        background:var(--bg);
+        color:#0f1724;
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+      }
+      .app{
+        width:100%;
+        max-width:var(--max-width);
+        padding:24px;
+        display:flex;
+        flex-direction:column;
+        gap:var(--gap);
       }
 
-      body {
-        min-height: 100vh;
-        background-color: #f0f2f5;
-        display: flex;
-        flex-direction: column;
+      /* Header */
+      header.app-header{
+        display:flex;
+        align-items:center;
+        gap:16px;
+        padding:12px 0;
+      }
+      .brand{
+        display:flex;align-items:center;gap:12px
+      }
+      .brand img{width:44px;height:44px;border-radius:8px}
+      .brand h1{font-size:1.05rem;margin:0}
+      .meta{margin-left:auto;color:var(--muted);font-size:0.9rem}
+
+      /* Main layout - flexbox */
+      .main{
+        display:flex;gap:20px;width:100%;align-items:stretch;
+      }
+      /* left visual panel and right control panel */
+      .visual-panel{
+        flex:1.1;display:flex;flex-direction:column;gap:16px;
+      }
+      .control-panel{
+        flex:.95;display:flex;flex-direction:column;gap:16px;
       }
 
-      main {
-        flex: 1;
-        padding: 1rem;
-      }
+      /* Cards */
+      .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+      .media{border-radius:10px;overflow:hidden}
+      .crane-img{width:100%;height:220px;object-fit:cover;display:block}
 
-      footer {
-        margin-top: auto;
-      }
+      .chart-wrap{height:360px;border-radius:10px;overflow:hidden}
+      .chart-canvas{width:100%!important;height:100%!important;display:block}
 
-      .graph-container {
-        background-color: #ffffff;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        /* Responsive height: between 220px and 420px */
-        min-height: clamp(220px, 35vh, 420px);
+      /* Controls */
+      .controls{display:flex;gap:12px;align-items:center}
+      .btn{
+        appearance:none;border:0;padding:10px 14px;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600
       }
+      .btn.ghost{background:transparent;border:1px solid rgba(12,58,178,0.12);color:var(--accent)}
 
-      .report-container {
-        background-color: #ffffff;
-        border-radius: 0.5rem;
-        min-height: 150px;
+      .status{font-size:0.9rem;color:var(--muted)}
+
+      /* Dynamic sections */
+      #dynamic-data-container{display:flex;flex-direction:column;gap:8px}
+      .field-row{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:#fbfdff;border:1px solid rgba(15,23,42,0.03)}
+      .field-row .label{color:var(--muted)}
+
+      /* Reports */
+      .reports{display:flex;flex-direction:column;gap:12px}
+      .reports .two-col{display:flex;gap:12px}
+      .report-card{flex:1;min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+
+      footer{width:100%;text-align:center;color:var(--muted);padding:16px 0;font-size:0.9rem}
+
+      /* Responsive */
+      @media (max-width:900px){
+        .main{flex-direction:column}
+        .chart-wrap{height:300px}
+        .crane-img{height:180px}
       }
-
-      .data-section {
-        padding: 0.75rem;
-      }
-
-      .chart-canvas {
-        width: 100% !important;
-        height: 100% !important;
-      }
-
-      @media (max-width: 575.98px) {
-        header .container {
-          gap: 0.5rem;
-          padding: 0.5rem;
-        }
-        .graph-container {
-          min-height: 260px;
-        }
-        .overall-report-container h2 {
-          font-size: 1.125rem;
-        }
+      @media (max-width:420px){
+        .chart-wrap{height:240px}
+        .crane-img{height:140px}
+        .brand h1{font-size:0.95rem}
       }
     </style>
   </head>
-
   <body>
-    <!-- Header -->
-    <header class="bg-dark text-white py-3 shadow-sm">
-      <div
-        class="container d-flex flex-column flex-md-row align-items-center justify-content-center gap-3"
-      >
-        <img
-          src="./components/favicon.png"
-          alt="SLI Logo"
-          class="me-md-2"
-          style="height: 50px"
-        />
-        <h1 class="mb-0 text-center text-md-start fs-5">SLI Mini-Project</h1>
-      </div>
-    </header>
-
-    <!-- Main Content (fluid for responsiveness) -->
-    <main class="container-fluid">
-      <div class="container">
-        <div class="row g-4 my-4">
-          <!-- Visualization Section -->
-          <div class="col-12 col-md-6">
-            <!-- image section  -->
-            <div class="mb-3 text-center">
-              <img
-                src="./components/crane.jpg"
-                alt="Crane Image"
-                class="img-fluid rounded shadow-sm w-100 h-auto"
-                style="object-fit: cover; max-height: 280px"
-                loading="lazy"
-              />
-            </div>
-            <!-- Graph will be displayed here. -->
-            <div class="graph-container border p-2 shadow-sm">
-              <canvas id="dataChart" class="chart-canvas"></canvas>
-            </div>
-          </div>
-
-          <!-- Data Section -->
-          <div class="col-12 col-md-6 d-flex flex-column">
-            <div id="dynamic-data-container" class="flex-grow-1 mb-3"></div>
-
-            <div class="text-center mb-2 text-secondary">
-              <small id="last-updated">Last Updated: Never</small>
-            </div>
-
-            <div>
-              <button id="toggle-button" class="btn btn-success w-100 py-2">
-                Start Reading
-              </button>
-            </div>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <img src="./components/favicon.png" alt="logo" />
+          <div>
+            <h1>SLI Field Dashboard</h1>
+            <div class="status">Live sensor visualization & operator analytics</div>
           </div>
         </div>
+        <div class="meta">Built for demo — resize to test responsiveness</div>
+      </header>
 
-        <!-- Overall Report Section -->
-        <div class="overall-report-container py-3 my-3">
-          <h2 class="text-center mb-4">Overall Report</h2>
-          <div class="row g-3">
-            <!-- cost section  -->
-            <div class="col-12 col-md-6">
-              <h3 class="text-center mb-3">Cost Analysis</h3>
-              <div
-                id="cost-receipt"
-                class="bg-white rounded py-4 shadow-sm d-flex flex-column justify-content-center h-100"
-              >
-                <span class="text-center"
-                  >Cost Analysis Will Be Shown Here</span
-                >
+      <main class="main">
+        <!-- Visual left side -->
+        <section class="visual-panel">
+          <div class="card media">
+            <img class="crane-img" src="./components/crane.jpg" alt="Crane" loading="lazy" />
+          </div>
+
+          <div class="card chart-wrap">
+            <canvas id="dataChart" class="chart-canvas"></canvas>
+          </div>
+        </section>
+
+        <!-- Controls / data / reports right side -->
+        <aside class="control-panel">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="flex:1">
+                <div style="font-weight:700">Live Readings</div>
+                <div id="last-updated" class="status">Last Updated: Never</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+                <button id="toggle-button" class="btn">Start Reading</button>
+                <button id="reset-btn" class="btn ghost" style="font-weight:600;">Reset</button>
               </div>
             </div>
 
-            <!-- Operator Section -->
-            <div class="col-12 col-md-6">
-              <h3 class="text-center mb-3">Operator Usage</h3>
-              <div
-                id="operator-feedback"
-                class="bg-white rounded py-4 shadow-sm d-flex flex-column justify-content-center h-100"
-              >
-                <span class="text-center"
-                  >Operator Usage Will Be Shown Here</span
-                >
+            <div style="margin-top:12px" id="dynamic-data-container"></div>
+          </div>
+
+          <div class="reports">
+            <div class="two-col">
+              <div class="card report-card" id="operator-feedback">
+                <div style="text-align:center;color:var(--muted)">Operator Usage Will Be Shown Here</div>
+              </div>
+              <div class="card report-card" id="cost-receipt">
+                <div style="text-align:center;color:var(--muted)">Cost Analysis Will Be Shown Here</div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
+        </aside>
+      </main>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-3 mt-auto">
-      <div class="container">
-        <small>&copy; 2025 SLI Mini-Project. All rights reserved.</small>
-      </div>
-    </footer>
+      <footer>&copy; 2025 SLI Mini-Project — lightweight demo</footer>
+    </div>
 
-    <!-- Scripts (deferred for non-blocking load) -->
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-    ></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"
-    ></script>
+    <!-- Scripts (deferred) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script defer src="./components/script.js"></script>
   </body>
 </html>
