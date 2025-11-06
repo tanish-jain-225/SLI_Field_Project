@@ -7,9 +7,9 @@ const fetchLink = window.location.hostname === "localhost" ?
 let fetchInterval;
 
 // Get configurable constants from environment or use defaults - Converted to numbers
-const FETCH_INTERVAL_MS = Number(process.env.FETCH_INTERVAL_MS)
-const HOURLY_RATE = Number(process.env.HOURLY_RATE)
-const MINIMUM_CHARGE = Number(process.env.MINIMUM_CHARGE)
+const FETCH_INTERVAL_MS = 1000;
+const HOURLY_RATE = 1000;
+const MINIMUM_CHARGE = 500;
 
 // HTML Element References
 const toggleButton = document.getElementById("toggle-button");
