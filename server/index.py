@@ -1,47 +1,80 @@
-from flask import Flask, jsonify
+# server/index.py
+
+from flask import Flask, Response, request, jsonify
 from pymongo import MongoClient
 from flask_cors import CORS
-import os
 from dotenv import load_dotenv
+from bson import json_util
+
+import os
+import logging
 
 # Load environment variables
 load_dotenv()
 
-# Configuration
+# App configuration
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+CORS(app)
 
-PORT = 3000
-
+# Read environment variables once
+PORT = int(os.getenv("PORT", 5000))
 mongo_uri = os.getenv("MONGO_URI")
-db_name = os.getenv("DB_NAME")  # Your MongoDB database name
-collection_name = os.getenv("C_NAME")  # The collection where data will be saved
-client = MongoClient(mongo_uri)
+db_name = os.getenv("DB_NAME")
+collection_name = os.getenv("C_NAME")
+
+# Global lazy MongoDB client
+client = None
 
 
-# Routes 
+def get_mongo_client():
+    """Return a singleton MongoClient with sensible timeouts."""
+    global client
+    if client is None:
+        if not mongo_uri:
+            raise RuntimeError("MONGO_URI not set in environment")
+        # Use short timeouts so failures are fast (adjust as needed)
+        client = MongoClient(
+            mongo_uri,
+            serverSelectionTimeoutMS=5000,
+            socketTimeoutMS=5000,
+        )
+    return client
+
+
 @app.route("/", methods=["GET"])
 def get_items():
-    try:
-        # Connect to MongoDB each time the route is called
-        mongo_uri = os.getenv("MONGO_URI")
-        db_name = os.getenv("DB_NAME")
-        collection_name = os.getenv("C_NAME")
+    """Return documents from the configured collection.
 
-        client = MongoClient(mongo_uri)
-        db = client[db_name]
+    Query params:
+      - limit: optional integer to limit number of returned documents (safe bounds).
+    """
+    try:
+        # Initialize client lazily and get collection
+        mongo = get_mongo_client()
+        db = mongo[db_name]
         collection = db[collection_name]
 
-        # Fetch and serialize items
-        items = list(collection.find())
-        for item in items:
-            item["_id"] = str(item["_id"])  # Convert ObjectId to string for JSON - Takes 0.5 seconds
-        return jsonify(items) # Return the items as JSON - Takes 0.5 seconds
-    except Exception as e:
-        print(f"Error fetching data: {e}")
+        # Optional safe limit param
+        try:
+            limit = int(request.args.get("limit", 100))
+        except (TypeError, ValueError):
+            limit = 100
+        limit = max(1, min(limit, 1000))
+
+        # Prefer returning recent documents if a timestamp field exists, otherwise just limit
+        try:
+            cursor = collection.find().sort("timestamp", -1).limit(limit)
+        except Exception:
+            cursor = collection.find().limit(limit)
+
+        # Serialize using bson.json_util to handle ObjectId and datetimes
+        docs = list(cursor)
+        return Response(json_util.dumps(docs), mimetype="application/json")
+    except Exception:
+        app.logger.exception("Error fetching data")
         return jsonify({"message": "Internal server error"}), 500
 
-# Start the Server Only After Database is Initialized
+
 if __name__ == "__main__":
-    app.run(port=PORT) # Time taken to start the server is 0.5 seconds
-    # Total time taken for code to run is 1.5 seconds
+    logging.basicConfig(level=logging.INFO)
+    app.run(host="0.0.0.0", port=PORT)
