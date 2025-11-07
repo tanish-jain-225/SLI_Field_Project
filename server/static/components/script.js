@@ -2,7 +2,7 @@
 // by your Flask server. Fallback to localhost Flask if developing locally.
 const fetchLink = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000/data" // Local Flask server URL when developing locally
-    : "https://sli-field-project-backend.vercel.app/data"; // Work with your deployed backend URL here
+    : "https://sli-field-project-web.vercel.app/data"; // Work with your deployed backend URL here
 
 // Configurable Fetch URL - auto switch based on environment
 
