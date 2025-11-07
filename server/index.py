@@ -1,6 +1,6 @@
 # server/index.py
 
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request, jsonify, render_template
 from pymongo import MongoClient
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -17,7 +17,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Read environment variables once
-PORT = int(os.getenv("PORT", 5000))
+PORT = int(os.getenv("PORT"))
 mongo_uri = os.getenv("MONGO_URI")
 db_name = os.getenv("DB_NAME")
 collection_name = os.getenv("C_NAME")
@@ -42,11 +42,24 @@ def get_mongo_client():
 
 
 @app.route("/", methods=["GET"])
-def get_items():
-    """Return documents from the configured collection.
+def serve_index():
+    """Serve the frontend index.html from the server folder.
 
-    Query params:
-      - limit: optional integer to limit number of returned documents (safe bounds).
+    If you need the JSON API, use the `/data` endpoint.
+    """
+    try:
+        return render_template("index.html")
+    except Exception:
+        app.logger.exception("Error serving index.html")
+        return jsonify({"message": "Not found"}), 404
+
+
+@app.route("/data", methods=["GET"])
+def get_items():
+    """Return documents from the configured collection as JSON.
+
+    This was previously exposed at `/`. It is intentionally available at
+    `/data` so the root can serve the frontend.
     """
     try:
         # Initialize client lazily and get collection
@@ -54,18 +67,11 @@ def get_items():
         db = mongo[db_name]
         collection = db[collection_name]
 
-        # Optional safe limit param
+        # Return all documents (no limit) — prefer most recent if timestamp exists
         try:
-            limit = int(request.args.get("limit", 100))
-        except (TypeError, ValueError):
-            limit = 100
-        limit = max(1, min(limit, 1000))
-
-        # Prefer returning recent documents if a timestamp field exists, otherwise just limit
-        try:
-            cursor = collection.find().sort("timestamp", -1).limit(limit)
+            cursor = collection.find().sort("timestamp", -1)
         except Exception:
-            cursor = collection.find().limit(limit)
+            cursor = collection.find()
 
         # Serialize using bson.json_util to handle ObjectId and datetimes
         docs = list(cursor)
@@ -74,7 +80,13 @@ def get_items():
         app.logger.exception("Error fetching data")
         return jsonify({"message": "Internal server error"}), 500
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint to verify server is running."""
+    try:
+        return jsonify({"status": "ok"}), 200
+    except Exception:
+        return jsonify({"status": "error"}), 500
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    app.run(host="0.0.0.0", port=int(PORT))
+    app.run(port=int(PORT))

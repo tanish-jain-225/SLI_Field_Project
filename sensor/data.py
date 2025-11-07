@@ -11,8 +11,6 @@ import os
 import random
 import time
 import threading
-import signal
-import sys
 import requests
 
 # Load environment variables
@@ -22,16 +20,11 @@ load_dotenv()
 app = Flask(__name__)
 
 # Environment Variables (with sensible defaults and parsing)
-PORT = int(os.getenv('PORT', '5000'))
 mongo_uri = os.getenv('MONGO_URI')
 db_name = os.getenv('DB_NAME')
 collection_name = os.getenv('C_NAME')
-try:
-    INTERVAL = float(os.getenv('INTERVAL', '1'))
-    if INTERVAL <= 0:
-        INTERVAL = 1.0
-except Exception:
-    INTERVAL = 1.0
+PORT = int(os.getenv('PORT'))
+INTERVAL = float(os.getenv('INTERVAL'))
 
 # Global MongoDB Client (reused for efficiency)
 client = None
@@ -116,6 +109,7 @@ def post_sensor_data():
         "rotation_y": random.randint(0, 10),
         "rotation_z": random.randint(0, 10),
         "jerk": random.randint(0, 10),
+        # "angle": random.randint(0, 10),  # Example of adding new parameter
     }
 
 
@@ -133,6 +127,7 @@ def post_data(data):
 
         # Insert new data
         result = collection.insert_one(data)
+        print("Inserted New Data:", data)
 
         # Fetch and delete all previous documents
         # old_docs = collection.find({"_id": {"$ne": result.inserted_id}})
@@ -169,7 +164,6 @@ def start_periodic_data_posting():
             try:
                 new_data = post_sensor_data()
                 post_data(new_data)
-                print(f"Posted new data: {new_data}")
                 # Reset backoff on success
                 backoff = 1.0
             except Exception as e:
@@ -190,20 +184,8 @@ def start_periodic_data_posting():
 # ======================== Graceful Shutdown ========================
 
 
-def shutdown(reason):
-    print(f"Shutting down server: {reason}")
-    if client:
-        client.close()
-        print("MongoDB connection closed.")
-    sys.exit(0)
-
-
-def signal_handler(sig, frame):
-    shutdown(f"Signal {sig} received")
-
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+# Shutdown mechanism intentionally removed so the sensor keeps posting data
+# The script is designed to run continuously and will not exit on signals.
 
 # ======================== Health Check Endpoint (Optional) ========================
 

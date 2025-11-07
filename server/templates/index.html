@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="SLI Mini-Project Screen" />
+    <meta name="theme-color" content="#0d6efd" />
+
+    <title>SLI — Field Project</title>
+    
+    <link
+      rel="shortcut icon"
+      href="{{ url_for('static', filename='components/favicon.ico') }}"
+      type="image/x-icon"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='components/styles.css') }}"
+    />
+
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <img src="{{ url_for('static', filename='components/favicon.ico') }}" alt="logo" />
+          <div>
+            <h1>SLI Field Dashboard</h1>
+            <div class="status">
+              Live sensor visualization & operator analytics
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <!-- Visual left side -->
+        <section class="visual-panel">
+          <div class="card">
+            <img
+              class="crane-img"
+              src="{{ url_for('static', filename='components/crane.jpg') }}"
+              alt="Crane"
+              loading="lazy"
+            />
+          </div>
+
+          <div class="card chart-wrap">
+            <canvas id="dataChart" class="chart-canvas"></canvas>
+          </div>
+        </section>
+
+        <!-- Controls / data / reports right side -->
+        <aside class="control-panel">
+          <div class="card">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+              "
+            >
+              <div style="flex: 1">
+                <div style="font-weight: 700">Live Readings</div>
+                <div id="last-updated" class="status">Last Updated: Never</div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                  align-items: flex-end;
+                "
+              >
+                <button id="toggle-button" class="btn btn-success">
+                  Start Reading
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px" id="dynamic-data-container"></div>
+          </div>
+
+          <div class="reports">
+            <div class="card report-card margin-top-2" id="operator-feedback">
+              <div style="text-align: center; color: var(--muted)">
+                Operator Usage Will Be Shown Here
+              </div>
+            </div>
+            <div class="card report-card margin-top-2" id="cost-receipt">
+              <div style="text-align: center; color: var(--muted)">
+                Cost Analysis Will Be Shown Here
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer>&copy; 2025 SLI Mini-Project</footer>
+    </div>
+
+    <!-- Scripts (deferred) -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"
+    ></script>
+    <script defer src="{{ url_for('static', filename='components/script.js') }}"></script>
+  </body>
+</html>
