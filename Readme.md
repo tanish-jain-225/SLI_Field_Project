@@ -1,52 +1,51 @@
 ## SLI Field Project
 
-This repository contains a small field-data web application used for collecting, storing, and visualizing sensor-like data (crane/example data). It includes three main components:
+This repository collects, stores and visualizes simple sensor-like (crane) data. It contains three cooperating pieces:
 
-- `server/` — Flask-based backend that serves stored MongoDB documents over a GET `/` endpoint.
-- `sensor/` — A small Python service (`data.py`) that simulates or reads sensor data and posts it to MongoDB periodically.
-- `client/` — Static frontend (HTML/JS) that displays live data, a chart, and operator/cost analysis.
+- `server/` — Flask backend that serves the frontend (static files under `server/static/`) and provides a `/data` JSON endpoint.
+- `sensor/` — Small Python process (`data.py`) that posts simulated sensor documents to MongoDB periodically.
+- `server/static/` — Frontend files (HTML, CSS, JS). The client fetches `/data` from the same origin to show live updates.
 
-This README documents how to run the components locally, the environment variables they use, and recent improvements made to the code.
+This README explains how to run the components locally, what changed recently, and how to deploy the frontend on Vercel.
 
 ---
 
-## Repository layout
+## Repository layout (current)
 
 ```
 Readme.md
-client/
-  index.html
-  vercel.json
-  components/
-    script.js
-sensor/
-  data.py
-  requirements.txt
 server/
   index.py
   requirements.txt
   vercel.json
+  static/
+    components/
+      script.js
+      styles.css
+    index.html  # frontend entry (also present at server/templates/index.html)
+sensor/
+  data.py
+  requirements.txt
 ```
 
-## Quick start (recommended)
+## Quick start (local)
 
 Prerequisites:
 
-- Python 3.8+ (for `server/` and `sensor/`)
+- Python 3.8+
 - A running MongoDB instance (local or Atlas)
-- Optional: a browser to open `client/index.html` or a simple static server
 
-1. Create a `.env` file in `server/` and `sensor/` (or set environment variables) with at least:
+1) Create `.env` files (or export env vars) for both `server/` and `sensor/` with at least:
 
 ```
 MONGO_URI=mongodb://<user>:<pass>@host:port/?retryWrites=true&w=majority
 DB_NAME=<your_db_name>
 C_NAME=<collection_name>
-PORT=5000         # optional override
-INTERVAL=1        # (sensor) seconds between posts, default 1
+PORT=5000         # optional override for Flask server
+INTERVAL=1        # (sensor) seconds between posts, default 1.0
 ```
 
-2. Install server dependencies and run the backend:
+2) Install and run the server (serves frontend and `/data`):
 
 ```powershell
 cd server
@@ -54,9 +53,9 @@ python -m pip install -r requirements.txt
 python index.py
 ```
 
-By default the server listens on `0.0.0.0:5000` (or the port you set in `PORT`). The server exposes a single GET `/` endpoint which returns recent documents (supports a `?limit=` query parameter).
+Open http://localhost:5000/ — the page will fetch `/data` from the same origin and show live sensor posts.
 
-3. Install and run the sensor (simulator/uploader):
+3) Install and run the sensor poster (simulates or reads sensors and writes to MongoDB):
 
 ```powershell
 cd sensor
@@ -64,79 +63,45 @@ python -m pip install -r requirements.txt
 python data.py
 ```
 
-The sensor script periodically posts simulated sensor documents into the configured MongoDB collection. INTERVAL controls how often (seconds). Logs show inserted document ids.
-
-4. Run the client frontend:
-
-- Quick (static): open `client/index.html` directly in a browser — useful for layout checks.
-- Better (emulate server environment & fetch): serve the client folder so fetch requests work:
-
-```powershell
-# from repo root
-python -m http.server 5500
-# then open http://localhost:5500/client/index.html
-```
-
-The frontend's fetch URL (`client/components/script.js`) will point to the deployed backend by default. If you run locally, the script auto-detects `localhost` and uses `http://localhost:3000` for legacy setups; update `fetchLink` if your backend is on another port.
+The sensor posts documents at the configured `INTERVAL`. Ensure the sensor's `.env` (or environment) points to the same `MONGO_URI`, `DB_NAME`, `C_NAME` used by the server.
 
 ---
 
-## Environment variables (summary)
+## Key changes since earlier drafts
 
-- MONGO_URI — MongoDB connection string (required for server & sensor).
-- DB_NAME — Database name to use.
-- C_NAME — Collection name.
-- PORT — Port to run the Flask apps on (default 5000 in both `server/index.py` and `sensor/data.py`).
-- INTERVAL — (sensor) Seconds between posts (default 1.0).
+- Frontend moved into `server/static/` (the Flask server can serve the app at `/`). The client now uses a same-origin `/data` fetch URL by default.
+- `server/requirements.txt` trimmed (removed unused `requests`).
+- `sensor/data.py` runs as a standalone poster process that only needs `pymongo` + `python-dotenv` (no Flask required). The sensor defaults `INTERVAL` to 1.0s and reuses a single `MongoClient` with short timeouts.
+- `vercel.json` at the repo root can route `/` to `server/index.html` so Vercel will serve the static frontend; note that a serverless API (e.g., `api/data.py`) is still needed on Vercel to provide `/data` unless you host the API elsewhere.
 
-Store these in `.env` files in `server/` and `sensor/` or provide them as environment variables.
+## Deployment notes — Vercel
 
-## Recent code analysis & improvements
+- Vercel serves static files and serverless functions, it does not run persistent Flask processes. To deploy the frontend on Vercel and keep live `/data` working you have two main options:
+  1. Deploy the frontend statically on Vercel and add a Python serverless function (e.g., `api/data.py`) that queries MongoDB and returns the latest document(s). Include a root `requirements.txt` so Vercel installs `pymongo`.
+  2. Host the Flask server on a VM/container (or another platform that can run persistent servers) and deploy the frontend on Vercel or serve it from the same host.
 
-While reviewing this project the following key optimizations and best-practice improvements were implemented or recommended:
+- The repository contains a `vercel.json` that routes `/` to `server/index.html`. That makes Vercel serve the frontend, but you still need an API function to back `/data`.
 
-- server/index.py
-
-  - Uses a singleton (lazy) `MongoClient` with sensible timeouts (serverSelectionTimeoutMS/socketTimeoutMS) — avoids reconnecting per request.
-  - Serializes MongoDB results using `bson.json_util.dumps()` (handles ObjectId and datetimes) instead of manual per-document conversion.
-  - Supports `?limit=` query parameter with safe bounds to avoid returning huge datasets.
-
-- sensor/data.py
-
-  - Parses `INTERVAL` as a float and defaults it to 1.0 seconds.
-  - Posts data immediately and sleeps the remainder of the interval (previously it slept before posting, adding an extra delay).
-  - Uses MongoClient timeouts and no longer exits the process on transient DB errors — thread uses exponential backoff and keeps retrying.
-  - Logs only minimal info for high-frequency runs (inserted id instead of full payload).
-
-- client/
-  - `client/index.html` has been updated to a fully responsive layout (fluid containers, responsive chart container, lazy-loaded image, deferred scripts to avoid blocking page parse).
-  - `client/components/script.js` implements a robust fetch loop, UI initialization, chart updates, and operator skill calculation (jerk and acceleration are used as inputs for skill percentage).
-
-These changes improve performance (lower latency, reduced CPU work), robustness (timeouts, retry/backoff), and UX (responsive frontend, non-blocking scripts).
-
-## Notes, diagnostics & troubleshooting
-
-- If you see long delays when calling the server endpoint, ensure MongoDB is reachable and not returning extremely large result sets. Use `?limit=50` during testing.
-- If the sensor thread doesn't insert data:
-  - Check `MONGO_URI` and that the DB is reachable.
-  - Confirm `INTERVAL` is set to a sensible value (e.g., 1).
-- For production usage consider:
-  - Using authentication and restricted network access for MongoDB.
-  - Enabling pagination or cursor-based requests in the API for large datasets.
-  - Replacing the sensor insert pattern with `replace_one(..., upsert=True)` if you only need one current document.
-
-## Suggested next steps
-
-- Add simple integration tests that create a temporary test database, run the sensor to insert a few documents, then call the server endpoint to verify responses.
-- Add a small README per component (server/ and sensor/) describing env variables and examples.
-- Consider adding Dockerfiles for each component to make local testing reproducible.
+Recommendations for a production-friendly API:
+- Return only what the client needs (for live UI prefer `find_one(sort=[('timestamp', -1)])` to get the latest document).
+- Add pagination or NDJSON streaming if you intend to return large histories.
+- Cache or reuse MongoDB connections between warm invocations in serverless functions.
 
 ---
 
-If you'd like, I can also:
+## Troubleshooting
 
-- Add pagination/NDJSON streaming to the server endpoint for very large datasets.
-- Patch `client/components/script.js` to add fetch timeouts and a temporary offline indicator.
-- Add a `README` in `server/` and `sensor/` with step-by-step local dev instructions.
+- If the client shows no updates, verify that:
+  - The sensor is running and inserting documents into the configured collection.
+  - The server `/data` endpoint returns JSON (try `curl http://localhost:5000/data`).
+- If you see slow responses, use `?limit=50` while debugging to avoid returning huge datasets.
 
-Happy to make any of those follow-ups — tell me which you'd prefer.
+## Next steps (suggested)
+
+- Add `api/data.py` (serverless) and a root-level `requirements.txt` if you want to deploy the API on Vercel.
+- Add small per-component READMEs under `server/` and `sensor/` describing env vars and run steps (I can add those).
+- Add lightweight integration tests that run the sensor to insert a few documents, then exercise the server `/data` endpoint.
+
+---
+
+If you want, I can implement the Vercel serverless handler (`api/data.py`) and a root `requirements.txt` next so the site on Vercel can fetch live data from MongoDB. Which would you like me to do?
