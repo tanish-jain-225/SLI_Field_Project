@@ -1,6 +1,6 @@
 // Configurable Fetch URL - use same-origin `/data` in production or when served
 // by your Flask server. Fallback to localhost Flask if developing locally.
-const fetchLink = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+const FETCH_LINK = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000/data" // Local Flask server URL when developing locally
     : "https://sli-field-project-web.vercel.app/data"; // Work with your deployed backend URL here
 
@@ -218,39 +218,51 @@ function generateCostReceipt() {
         const startTimeFormatted = startTime.toLocaleString();
         const endTimeFormatted = endTime.toLocaleString();
 
-        // Create receipt HTML with consistent card layout
+        // Create receipt HTML using flexbox-friendly wrappers for responsive layout
         const receiptHTML = `
-            <div class="report-card">
-                <div class="report-title">Crane Usage Receipt</div>
-                <div class="report-sub">Usage period and billing summary</div>
-
-                <div class="report-grid">
-                    <div class="report-item">
-                        <div class="label">Start Time</div>
-                        <div class="value">${startTimeFormatted}</div>
+            <div class="report-card receipt-card">
+                <div class="receipt-body">
+                    <div class="receipt-header">
+                        <div class="report-title">Crane Usage Receipt</div>
+                        <div class="report-sub">Usage period and billing summary</div>
                     </div>
-                    <div class="report-item">
-                        <div class="label">End Time</div>
-                        <div class="value">${endTimeFormatted}</div>
+                    <div class="receipt-grid">
+                        <div class="receipt-col">
+                            <div class="report-item">
+                                <div class="label">Start Time</div>
+                                <div class="value">${startTimeFormatted}</div>
+                            </div>
+                            <div class="report-item">
+                                <div class="label">Total Usage</div>
+                                <div class="value">${usageTimeHours.toFixed(2)} hours</div>
+                            </div>
+                        </div>
+
+                        <div class="receipt-col">
+                            <div class="report-item">
+                                <div class="label">End Time</div>
+                                <div class="value">${endTimeFormatted}</div>
+                            </div>
+                            <div class="report-item">
+                                <div class="label">Rate</div>
+                                <div class="value">Rs. ${HOURLY_RATE.toFixed(2)}/hour</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="receipt-footer">
+                        <div class="footer-left">
+                            <div class="label">Total Cost</div>
+                            <div class="value total-cost">Rs. ${formattedCost}</div>
+                        </div>
+                        <div class="footer-right">
+                            <div class="report-sub">Minimum charge applies: Rs. ${MINIMUM_CHARGE.toFixed(2)}</div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="report-grid" style="margin-top:10px">
-                    <div class="report-item">
-                        <div class="label">Total Usage</div>
-                        <div class="value">${usageTimeHours.toFixed(2)} hours</div>
-                    </div>
-                    <div class="report-item">
-                        <div class="label">Rate</div>
-                        <div class="value">Rs. ${HOURLY_RATE.toFixed(2)}/hour</div>
-                    </div>
                 </div>
 
-                <div style="margin-top:12px;text-align:center">
-                    <div class="label">Total Cost</div>
-                    <div class="value" style="font-size:1.4rem;color:var(--success)">Rs. ${formattedCost}</div>
-                    <div class="report-sub" style="margin-top:6px">Minimum charge applies: Rs. ${MINIMUM_CHARGE.toFixed(2)}</div>
-                </div>
+                
             </div>
         `;
 
@@ -455,33 +467,40 @@ function generateOperatorFeedback() {
         const skillRatingText = getSkillRating(skillLevel);
         const feedbackText = generateFeedbackText(skillLevel, accelerationStats, jerkStats);
 
-        // Create feedback HTML using report-card layout and a simple progress bar
+        // Build a consistent, flexbox-friendly feedback card
+        const progressColor = skillLevel < 50 ? '#dc3545' : (skillLevel < 70 ? '#ffc107' : (skillLevel < 85 ? '#0dcaf0' : '#198754'));
+
         const feedbackHTML = `
             <div class="report-card">
-                <div class="report-title">Operator Performance Analysis</div>
-                <div class="report-sub">Summary of handling smoothness and consistency</div>
-
-                <div style="width:100%;margin-top:6px">
-                    <div class="progress" aria-hidden="true">
-                        <div class="progress-bar" style="width: ${skillLevel}%; background:${skillLevel < 50 ? '#dc3545' : (skillLevel < 70 ? '#ffc107' : (skillLevel < 85 ? '#0dcaf0' : '#198754'))}"></div>
-                    </div>
-                    <div style="text-align:right;margin-top:6px;font-weight:700">${skillLevel}% — ${skillRatingText}</div>
+                <div class="report-header">
+                    <div class="report-title">Operator Performance Analysis</div>
+                    <div class="report-sub">Summary of handling smoothness and consistency</div>
                 </div>
 
-                <div class="report-grid" style="margin-top:12px">
-                    <div class="report-item">
+                <div class="feedback-progress" style="width:100%;margin-top:8px;">
+                    <div class="progress" aria-hidden="true">
+                        <div class="progress-bar" style="width: ${skillLevel}%; background:${progressColor}"></div>
+                    </div>
+                    <div class="feedback-meta" style="text-align:left;margin-top:8px;font-weight:700">${skillLevel}% — ${skillRatingText}</div>
+                </div>
+
+                <!-- Metrics laid out with flexbox; items will wrap on narrow viewports -->
+                <div class="feedback-metrics" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px; width:100%; justify-content:space-between;">
+                    <div class="metric" style="flex:1 1 160px;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;box-sizing:border-box; background:#fbfdff; border-radius:4px; gap:8px;">
                         <div class="label">Max Acceleration</div>
                         <div class="value">${accelerationStats.max.toFixed(2)} m/s²</div>
                     </div>
-                    <div class="report-item">
+                    <div class="metric" style="flex:1 1 160px;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;box-sizing:border-box; background:#fbfdff; border-radius:4px; gap:8px;">
                         <div class="label">Consistency</div>
                         <div class="value">${Math.round(jerkStats.consistency)}%</div>
                     </div>
                 </div>
 
-                <div style="margin-top:12px">
-                    <div class="label">Performance Feedback</div>
-                    <div style="margin-top:6px;color:var(--muted)">${feedbackText}</div>
+                <div class="feedback-text" style="margin-top:12px;width:100%">
+                    <div style="width:100%;padding:10px 12px;box-sizing:border-box;">
+                        <div class="label">Performance Feedback</div>
+                        <div class="value" style="margin-top:6px;color:var(--muted);font-weight:400">${feedbackText}</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -512,7 +531,7 @@ async function fetchData() {
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
-        const response = await fetch(fetchLink, { signal: controller.signal });
+        const response = await fetch(FETCH_LINK, { signal: controller.signal });
         clearTimeout(timeoutId);
         fetchController = null;
 
